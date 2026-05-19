@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-white text-fg font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-light ring-offset-0;
+  }
+}
+
+@layer components {
+  .sa-num {
+    font-variant-numeric: tabular-nums;
+  }
+  .sa-display {
+    @apply font-display tracking-tight;
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-[1280px] px-5 md:px-14;
+  }
+}

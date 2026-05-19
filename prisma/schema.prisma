@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @db.Uuid
+  phone     String?  @unique
+  email     String?  @unique
+  name      String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  attempts TestAttempt[]
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Subject {
+  id     String  @id @default(cuid())
+  nameKz String  @map("name_kz")
+  slug   String  @unique
+  order  Int     @default(0)
+
+  topics Topic[]
+  tests  Test[]
+
+  @@map("subjects")
+}
+
+model Topic {
+  id        String @id @default(cuid())
+  subjectId String @map("subject_id")
+  nameKz    String @map("name_kz")
+
+  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@map("topics")
+}
+
+model Test {
+  id               String   @id @default(cuid())
+  subjectId        String   @map("subject_id")
+  titleKz          String   @map("title_kz")
+  descriptionKz    String?  @map("description_kz")
+  timeLimitMinutes Int      @map("time_limit_minutes")
+  isPublished      Boolean  @default(false) @map("is_published")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  subject   Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  TestAttempt[]
+
+  @@index([isPublished, subjectId])
+  @@map("tests")
+}
+
+model Question {
+  id                  String  @id @default(cuid())
+  testId              String  @map("test_id")
+  topicId             String? @map("topic_id")
+  order               Int
+  textKz              String  @map("text_kz")
+  imageUrl            String? @map("image_url")
+  explanationKz       String? @map("explanation_kz")
+  explanationImageUrl String? @map("explanation_image_url")
+
+  test        Test           @relation(fields: [testId], references: [id], onDelete: Cascade)
+  topic       Topic?         @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  options     AnswerOption[]
+  userAnswers UserAnswer[]
+  drafts      Draft[]
+
+  @@index([testId, order])
+  @@map("questions")
+}
+
+model AnswerOption {
+  id         String  @id @default(cuid())
+  questionId String  @map("question_id")
+  textKz     String  @map("text_kz")
+  isCorrect  Boolean @default(false) @map("is_correct")
+  order      Int
+
+  question    Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userAnswers UserAnswer[]
+
+  @@map("answer_options")
+}
+
+model TestAttempt {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id") @db.Uuid
+  testId         String    @map("test_id")
+  startedAt      DateTime  @default(now()) @map("started_at")
+  finishedAt    DateTime? @map("finished_at")
+  score          Int?
+  totalQuestions Int       @map("total_questions")
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test    Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers UserAnswer[]
+  drafts  Draft[]
+
+  @@index([userId, testId, score])
+  @@index([userId, finishedAt])
+  @@map("test_attempts")
+}
+
+model UserAnswer {
+  id               String  @id @default(cuid())
+  attemptId        String  @map("attempt_id")
+  questionId       String  @map("question_id")
+  selectedOptionId String? @map("selected_option_id")
+  isCorrect        Boolean @default(false) @map("is_correct")
+
+  attempt        TestAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       Question      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption AnswerOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, questionId])
+  @@map("user_answers")
+}
+
+model Draft {
+  id         String   @id @default(cuid())
+  attemptId  String   @map("attempt_id")
+  questionId String   @map("question_id")
+  canvasData String   @map("canvas_data") @db.Text
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  attempt  TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@map("drafts")
+}
