@@ -15,6 +15,7 @@ export type AttemptRow = {
   testTitleKz: string;
   finishedAt: string; // ISO
   startedAt: string; // ISO
+  timeLimitMinutes: number;
   score: number;
   totalQuestions: number;
 };
@@ -50,7 +51,7 @@ export function AttemptsList({ attempts }: { attempts: AttemptRow[] }) {
             <div />
           </div>
           {visible.map((a, i) => {
-            const secs = Math.max(
+            const rawSecs = Math.max(
               0,
               Math.floor(
                 (new Date(a.finishedAt).getTime() -
@@ -58,6 +59,8 @@ export function AttemptsList({ attempts }: { attempts: AttemptRow[] }) {
                   1000,
               ),
             );
+            // Cap by time limit + 10s grace — anything longer means auto-finalize.
+            const secs = Math.min(rawSecs, a.timeLimitMinutes * 60 + 10);
             return (
               <div
                 key={a.id}

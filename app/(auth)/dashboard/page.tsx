@@ -3,6 +3,7 @@ import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getPublishedTestsCached } from '@/lib/cache';
 import { calcStreak } from '@/lib/streak';
+import { finalizeStaleAttemptsForUser } from '@/lib/attempt';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
 import { DashboardList, type DashboardTest } from './DashboardList';
@@ -13,6 +14,9 @@ export const runtime = 'nodejs';
 
 export default async function Dashboard() {
   const u = await requireRegularUserPage();
+
+  // Auto-finalize any expired-but-unfinished attempts (e.g. user closed tab).
+  await finalizeStaleAttemptsForUser(u.db.id);
 
   const [tests, attempts] = await Promise.all([
     getPublishedTestsCached(),
@@ -56,7 +60,7 @@ export default async function Dashboard() {
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="sa-display text-[28px] md:text-[36px] font-semibold tracking-[-0.02em] m-0">
-              Сәлем, {u.db.name}! <span className="text-[32px]">👋</span>
+              Сәлем, {u.db.name}!
             </h1>
             <p className="text-base text-fg-muted mt-1.5">
               {streak > 0

@@ -20,6 +20,25 @@ export function isExpired(startedAt: Date, timeLimitMinutes: number, now = Date.
 }
 
 /**
+ * Sweep: find all unfinished attempts for a user that are past the time limit
+ * and finalize them. Cheap fallback in lieu of a cron — runs on dashboard load.
+ */
+export async function finalizeStaleAttemptsForUser(userId: string): Promise<number> {
+  const unfinished = await prisma.testAttempt.findMany({
+    where: { userId, finishedAt: null },
+    include: { test: { select: { timeLimitMinutes: true } } },
+  });
+  let finalized = 0;
+  for (const a of unfinished) {
+    if (isExpired(a.startedAt, a.test.timeLimitMinutes)) {
+      await finalizeAttempt(a.id);
+      finalized += 1;
+    }
+  }
+  return finalized;
+}
+
+/**
  * Finalize an attempt: compute `isCorrect` on each answer, sum score, set finishedAt.
  * Idempotent if already finished. Uses parallel updateMany (no interactive
  * transaction) for PgBouncer compatibility.

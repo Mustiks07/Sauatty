@@ -13,8 +13,29 @@ export function Calculator() {
     return s.replace(/×/g, '*').replace(/÷/g, '/').replace(/,/g, '.').replace(/−/g, '-');
   }
 
+  const OPS = ['+', '−', '×', '÷'];
+
   const append = useCallback((v: string) => {
-    setExpr((e) => (e === '0' || e === 'Қате' ? v : e + v));
+    setExpr((e) => {
+      if (e === 'Қате') return OPS.includes(v) ? '' : v;
+      if (!e) {
+        // Don't start with a binary operator (except minus → negative).
+        if (OPS.includes(v) && v !== '−') return '';
+        return v;
+      }
+      if (OPS.includes(v)) {
+        const last = e[e.length - 1];
+        // Replace trailing operator instead of stacking.
+        if (OPS.includes(last)) {
+          return e.slice(0, -1) + v;
+        }
+        // Don't allow operator right after opening paren or comma.
+        if (last === '(' || last === ',') return e;
+      }
+      // Two consecutive commas — skip.
+      if (v === ',' && e[e.length - 1] === ',') return e;
+      return e + v;
+    });
   }, []);
 
   const clear = useCallback(() => {

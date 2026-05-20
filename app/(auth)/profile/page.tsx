@@ -19,7 +19,7 @@ export default async function ProfilePage() {
 
   const attempts = await prisma.testAttempt.findMany({
     where: { userId: u.db.id, finishedAt: { not: null } },
-    include: { test: { select: { titleKz: true } } },
+    include: { test: { select: { titleKz: true, timeLimitMinutes: true } } },
     orderBy: { finishedAt: 'desc' },
     take: 200,
   });
@@ -30,6 +30,7 @@ export default async function ProfilePage() {
     testTitleKz: a.test.titleKz,
     finishedAt: a.finishedAt!.toISOString(),
     startedAt: a.startedAt.toISOString(),
+    timeLimitMinutes: a.test.timeLimitMinutes,
     score: a.score ?? 0,
     totalQuestions: a.totalQuestions,
   }));

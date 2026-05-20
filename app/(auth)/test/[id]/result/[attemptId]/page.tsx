@@ -38,10 +38,12 @@ export default async function ResultPage({
   const score = attempt.score ?? 0;
   const total = attempt.totalQuestions;
   const wrong = total - score;
-  const seconds = Math.max(
+  const rawSeconds = Math.max(
     0,
     Math.floor((attempt.finishedAt.getTime() - attempt.startedAt.getTime()) / 1000),
   );
+  // Cap by time limit — auto-finalized attempts have inflated raw duration.
+  const seconds = Math.min(rawSeconds, attempt.test.timeLimitMinutes * 60 + 10);
   const tone =
     score >= total * 0.9 ? 'green' : score >= total * 0.7 ? 'blue' : score >= total * 0.4 ? 'amber' : 'red';
   const message =
