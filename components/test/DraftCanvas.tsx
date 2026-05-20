@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
+import {
+  ReactSketchCanvas,
+  type ReactSketchCanvasRef,
+} from 'react-sketch-canvas';
 import {
   Pencil,
   Eraser,
@@ -13,11 +16,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/api-fetch';
-
-const SketchCanvas = dynamic(
-  () => import('react-sketch-canvas').then((m) => m.ReactSketchCanvas),
-  { ssr: false },
-);
 
 const COLORS = ['#0F172A', '#2563EB', '#EF4444', '#10B981'];
 const STROKES = [2, 4, 7];
@@ -35,7 +33,7 @@ export function DraftCanvas({
   fullscreen?: boolean;
   onToggleFullscreen?: () => void;
 }) {
-  const ref = useRef<any>(null);
+  const ref = useRef<ReactSketchCanvasRef>(null);
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
   const [color, setColor] = useState(COLORS[0]);
   const [stroke, setStroke] = useState(STROKES[1]);
@@ -47,7 +45,7 @@ export function DraftCanvas({
     if (!ref.current) return;
     if (lastLoaded.current === questionId) return;
     lastLoaded.current = questionId;
-    ref.current.resetCanvas?.();
+    ref.current.resetCanvas();
     if (initialData) {
       try {
         const paths = JSON.parse(initialData);
@@ -76,48 +74,47 @@ export function DraftCanvas({
     }, 2000);
   }
 
-  return (
+  function activatePen() {
+    setTool('pen');
+    ref.current?.eraseMode(false);
+  }
+  function activateEraser() {
+    setTool('eraser');
+    ref.current?.eraseMode(true);
+  }
+  function pickColor(c: string) {
+    setColor(c);
+    activatePen();
+  }
+
+  const container = (
     <div
       className={cn(
         'border border-border bg-white shadow-card overflow-hidden flex flex-col flex-1',
-        fullscreen ? 'rounded-none' : 'rounded-lg',
-        !fullscreen && 'min-h-[320px]',
+        fullscreen
+          ? 'rounded-none fixed inset-0 z-[60] flex-1'
+          : 'rounded-lg min-h-[320px]',
       )}
     >
       <div className="px-3.5 py-2.5 flex items-center gap-1.5 border-b border-border bg-bg-alt flex-wrap">
-        <ToolBtn
-          active={tool === 'pen'}
-          onClick={() => {
-            setTool('pen');
-            ref.current?.eraseMode(false);
-          }}
-        >
+        <ToolBtn active={tool === 'pen'} onClick={activatePen}>
           <Pencil size={15} />
         </ToolBtn>
-        <ToolBtn
-          active={tool === 'eraser'}
-          onClick={() => {
-            setTool('eraser');
-            ref.current?.eraseMode(true);
-          }}
-        >
+        <ToolBtn active={tool === 'eraser'} onClick={activateEraser}>
           <Eraser size={15} />
         </ToolBtn>
         <div className="w-px h-5 bg-border mx-1" />
         {COLORS.map((c) => (
           <button
             key={c}
+            type="button"
             aria-label={`color ${c}`}
-            onClick={() => {
-              setColor(c);
-              setTool('pen');
-              ref.current?.eraseMode(false);
-            }}
+            onClick={() => pickColor(c)}
             className="w-[22px] h-[22px] rounded-full"
             style={{
               background: c,
               boxShadow:
-                color === c
+                color === c && tool === 'pen'
                   ? '0 0 0 2px #2563EB'
                   : 'inset 0 0 0 1px rgba(0,0,0,0.1)',
             }}
@@ -128,7 +125,7 @@ export function DraftCanvas({
           <button
             key={w}
             type="button"
-            aria-label={`stroke ${w}px`}
+            aria-label={`stroke ${w}`}
             onClick={() => setStroke(w)}
             className={cn(
               'w-[26px] h-[26px] rounded-sm flex items-center justify-center transition-colors',
@@ -154,11 +151,12 @@ export function DraftCanvas({
             ref.current?.clearCanvas();
             scheduleSave();
           }}
+          aria-label="Тазалау"
         >
           <Trash2 size={15} />
         </ToolBtn>
         {onToggleFullscreen && (
-          <ToolBtn onClick={onToggleFullscreen}>
+          <ToolBtn onClick={onToggleFullscreen} aria-label="Толық экран">
             {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </ToolBtn>
         )}
@@ -171,11 +169,11 @@ export function DraftCanvas({
           backgroundSize: '20px 20px',
         }}
       >
-        <SketchCanvas
+        <ReactSketchCanvas
           ref={ref}
           strokeColor={color}
           strokeWidth={stroke}
-          eraserWidth={16}
+          eraserWidth={Math.max(12, stroke * 4)}
           canvasColor="transparent"
           style={{ border: 'none', background: 'transparent' }}
           onStroke={scheduleSave}
@@ -186,27 +184,32 @@ export function DraftCanvas({
       </div>
     </div>
   );
+
+  return container;
 }
 
 function ToolBtn({
   active,
   onClick,
   children,
+  ...rest
 }: {
   active?: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  'aria-label'?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'w-[30px] h-[30px] rounded-sm flex items-center justify-center',
+        'w-[30px] h-[30px] rounded-sm flex items-center justify-center transition-colors',
         active
           ? 'bg-brand-light text-brand'
           : 'bg-transparent text-fg-muted hover:bg-bg-2',
       )}
+      {...rest}
     >
       {children}
     </button>

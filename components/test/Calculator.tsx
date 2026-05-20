@@ -9,8 +9,12 @@ export function Calculator() {
   const [result, setResult] = useState('0');
   const [memory, setMemory] = useState(0);
 
+  function normalize(s: string) {
+    return s.replace(/×/g, '*').replace(/÷/g, '/').replace(/,/g, '.').replace(/−/g, '-');
+  }
+
   const append = useCallback((v: string) => {
-    setExpr((e) => (e === '0' ? v : e + v));
+    setExpr((e) => (e === '0' || e === 'Қате' ? v : e + v));
   }, []);
 
   const clear = useCallback(() => {
@@ -20,35 +24,78 @@ export function Calculator() {
 
   const calc = useCallback(() => {
     try {
-      const normalized = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/,/g, '.').replace(/−/g, '-');
-      if (!normalized) return;
-      const r = evaluate(normalized);
+      const n = normalize(expr);
+      if (!n) return;
+      const r = evaluate(n);
       setResult(formatNum(r));
+      setExpr(String(r));
     } catch {
       setResult('Қате');
     }
   }, [expr]);
 
   const toggleSign = useCallback(() => {
-    setExpr((e) => (e.startsWith('-') ? e.slice(1) : '-' + e));
+    setExpr((e) => {
+      if (!e) return '-';
+      // toggle leading sign of last number
+      const m = e.match(/(.*?)([-+]?\d*\.?\d*)$/);
+      if (!m) return '-' + e;
+      const [, head, num] = m;
+      if (!num) return e + '-';
+      if (num.startsWith('-')) return head + num.slice(1);
+      return head + '-' + num;
+    });
   }, []);
 
+  // Classic calculator percent:
+  //   A + B%  →  A + (A*B/100)
+  //   A - B%  →  A - (A*B/100)
+  //   A * B%  →  A * (B/100)
+  //   A / B%  →  A / (B/100)
+  //   B%      →  B/100
   const percent = useCallback(() => {
-    try {
-      const r = evaluate(expr || '0') / 100;
-      setExpr(String(r));
-    } catch {}
-  }, [expr]);
+    setExpr((e) => {
+      const n = normalize(e);
+      const m = n.match(/^(.+?)\s*([+\-*/])\s*(\d*\.?\d+)\s*$/);
+      if (m) {
+        const [, left, op, right] = m;
+        try {
+          const A = evaluate(left);
+          const B = Number(right);
+          let pctVal: number;
+          if (op === '+' || op === '-') pctVal = (A * B) / 100;
+          else pctVal = B / 100;
+          return `${left}${op}${pctVal}`;
+        } catch {
+          return e;
+        }
+      }
+      try {
+        const r = evaluate(n || '0') / 100;
+        return String(r);
+      } catch {
+        return e;
+      }
+    });
+  }, []);
 
   // Keyboard support
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      )
+        return;
       if (e.key >= '0' && e.key <= '9') append(e.key);
       else if (e.key === '.' || e.key === ',') append(',');
-      else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
-        const map: Record<string, string> = { '*': '×', '/': '÷', '-': '−' };
-        append(map[e.key] ?? e.key);
-      } else if (e.key === 'Enter' || e.key === '=') {
+      else if (e.key === '+' || e.key === '-') append(e.key === '-' ? '−' : '+');
+      else if (e.key === '*') append('×');
+      else if (e.key === '/') {
+        e.preventDefault();
+        append('÷');
+      } else if (e.key === '%') percent();
+      else if (e.key === 'Enter' || e.key === '=') {
         e.preventDefault();
         calc();
       } else if (e.key === 'Escape') {
@@ -59,22 +106,22 @@ export function Calculator() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [append, calc, clear]);
+  }, [append, calc, clear, percent]);
 
   const memOp = (op: 'C' | 'R' | '+' | '-') => {
     if (op === 'C') setMemory(0);
-    else if (op === 'R') setExpr((e) => (e || '0') + String(memory));
-    else if (op === '+') setMemory((m) => m + Number(result || 0));
-    else if (op === '-') setMemory((m) => m - Number(result || 0));
+    else if (op === 'R') setExpr((e) => (e || '') + String(memory));
+    else if (op === '+') setMemory((m) => m + Number(normalize(result) || 0));
+    else if (op === '-') setMemory((m) => m - Number(normalize(result) || 0));
   };
 
   return (
     <div className="rounded-lg border border-border bg-white shadow-card p-4 flex flex-col gap-3">
       <div className="rounded-md bg-[#0F172A] px-4 py-3.5 text-right">
         <div className="sa-num text-[13px] text-white/50 font-mono mb-1 min-h-[16px] truncate">
-          {expr}
+          {expr || ' '}
         </div>
-        <div className="sa-num text-[28px] sm:text-[32px] text-white font-semibold font-display">
+        <div className="sa-num text-[28px] sm:text-[32px] text-white font-semibold font-display truncate">
           {result}
         </div>
       </div>
@@ -114,7 +161,6 @@ function formatNum(n: number | string): string {
   if (!Number.isFinite(num)) return String(n);
   if (Math.abs(num) >= 1e12) return num.toExponential(4);
   const s = Number.isInteger(num) ? String(num) : String(Number(num.toFixed(8)));
-  // Thin space thousand separator
   const [int, frac] = s.split('.');
   return int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + (frac ? '.' + frac : '');
 }
@@ -133,7 +179,7 @@ function KBtn({
   const styles = {
     num: 'bg-white text-fg',
     op: 'bg-bg-2 text-fg font-semibold',
-    acc: 'bg-brand text-white',
+    acc: 'bg-brand text-white hover:bg-brand-hover',
     ghost: 'bg-bg-alt text-fg-muted font-medium',
   }[kind];
   return (
@@ -142,7 +188,6 @@ function KBtn({
       onClick={onClick}
       className={cn(
         'border border-border rounded-md py-3.5 text-[17px] font-semibold font-display transition-colors hover:bg-bg-alt active:scale-[0.98]',
-        kind === 'acc' && 'hover:bg-brand-hover',
         styles,
         span === 2 && 'col-span-2',
       )}
