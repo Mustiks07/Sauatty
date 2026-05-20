@@ -10,6 +10,28 @@ export const metadata = { title: 'Тесттер' };
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+function yyyymmdd(d: Date): string {
+  // Almaty timezone-friendly day key.
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Almaty' });
+}
+
+function calcStreak(finishedDates: Date[]): number {
+  if (finishedDates.length === 0) return 0;
+  const days = new Set(finishedDates.map((d) => yyyymmdd(d)));
+  let streak = 0;
+  const cursor = new Date();
+  // Allow today missing — start from yesterday if needed
+  if (!days.has(yyyymmdd(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (!days.has(yyyymmdd(cursor))) return 0;
+  }
+  while (days.has(yyyymmdd(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
 export default async function Dashboard() {
   const u = await requireRegularUserPage();
 
@@ -17,7 +39,7 @@ export default async function Dashboard() {
     getPublishedTestsCached(),
     prisma.testAttempt.findMany({
       where: { userId: u.db.id, finishedAt: { not: null } },
-      select: { testId: true, score: true },
+      select: { testId: true, score: true, finishedAt: true, totalQuestions: true },
     }),
   ]);
 
@@ -29,11 +51,14 @@ export default async function Dashboard() {
   }
 
   const totalAttempts = attempts.length;
-  const avg =
-    attempts.length === 0
-      ? 0
-      : attempts.reduce((s, a) => s + (a.score ?? 0), 0) / attempts.length;
+  const sumScore = attempts.reduce((s, a) => s + (a.score ?? 0), 0);
+  const sumTotal = attempts.reduce((s, a) => s + a.totalQuestions, 0);
+  const avg = totalAttempts ? sumScore / totalAttempts : 0;
   const best = attempts.reduce((m, a) => Math.max(m, a.score ?? 0), 0);
+  const streak = calcStreak(
+    attempts.map((a) => a.finishedAt).filter((d): d is Date => !!d),
+  );
+  const pct = sumTotal ? Math.round((sumScore / sumTotal) * 100) : 0;
 
   const list: DashboardTest[] = tests.map((t) => ({
     id: t.id,
@@ -41,6 +66,7 @@ export default async function Dashboard() {
     questionCount: t._count.questions,
     timeLimitMinutes: t.timeLimitMinutes,
     best: bestByTest.get(t.id) ?? null,
+    subject: t.subject,
   }));
 
   return (
@@ -54,39 +80,48 @@ export default async function Dashboard() {
               Сәлем, {u.db.name}! <span className="text-[32px]">👋</span>
             </h1>
             <p className="text-base text-fg-muted mt-1.5">
-              Бүгін бір тест тапсырып, серпінді сақта.
+              {streak > 0
+                ? `${streak} күн қатарынан тапсыруға дайынсың ба?`
+                : 'Бүгін бір тест тапсырып, серпінді баста.'}
             </p>
           </div>
-          {totalAttempts > 0 && (
-            <div className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-accent-light rounded-full">
+          {streak > 0 && (
+            <div
+              className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-accent-light rounded-full"
+              title="Күн қатарынан"
+            >
               <Flame size={18} className="text-accent-hover" />
-              <span className="text-sm font-semibold text-accent-ink">
-                Қарай дайындал!
+              <span className="sa-num text-sm font-semibold text-accent-ink">
+                {streak} күн серпін
               </span>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10">
           <StatCard
-            icon={<Target size={22} className="text-brand" />}
+            icon={<Target size={20} className="text-brand" />}
             tone="blue"
             label="Барлық попытка"
             value={String(totalAttempts)}
-            sub="барлығы"
           />
           <StatCard
-            icon={<LineChart size={22} className="text-accent-ink" />}
+            icon={<LineChart size={20} className="text-accent-ink" />}
             tone="amber"
             label="Орташа балл"
             value={avg.toFixed(1)}
-            sub="10 ұпайдан"
           />
           <StatCard
-            icon={<Trophy size={22} className="text-success-ink" />}
+            icon={<Trophy size={20} className="text-success-ink" />}
             tone="green"
             label="Үздік нәтиже"
             value={String(best)}
+          />
+          <StatCard
+            icon={<Flame size={20} className="text-accent-hover" />}
+            tone="amber"
+            label="Дұрыс %"
+            value={`${pct}%`}
           />
         </div>
 
@@ -101,13 +136,11 @@ function StatCard({
   tone,
   label,
   value,
-  sub,
 }: {
   icon: React.ReactNode;
   tone: 'blue' | 'amber' | 'green';
   label: string;
   value: string;
-  sub?: string;
 }) {
   const bg = {
     blue: 'bg-brand-light',
@@ -115,15 +148,16 @@ function StatCard({
     green: 'bg-success-light',
   }[tone];
   return (
-    <Card className="p-6 flex justify-between items-start">
+    <Card className="p-4 sm:p-5 flex justify-between items-start">
       <div>
-        <div className="text-[13px] text-fg-muted font-medium mb-1.5">{label}</div>
-        <div className="sa-display sa-num text-[36px] font-bold tracking-[-0.02em] text-fg leading-none">
+        <div className="text-[12px] sm:text-[13px] text-fg-muted font-medium mb-1.5">
+          {label}
+        </div>
+        <div className="sa-display sa-num text-[24px] sm:text-[32px] font-bold tracking-[-0.02em] text-fg leading-none">
           {value}
         </div>
-        {sub && <div className="text-[13px] text-fg-muted mt-1">{sub}</div>}
       </div>
-      <div className={`w-11 h-11 rounded-md ${bg} flex items-center justify-center`}>
+      <div className={`w-10 h-10 rounded-md ${bg} flex items-center justify-center`}>
         {icon}
       </div>
     </Card>

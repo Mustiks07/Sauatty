@@ -16,21 +16,31 @@ type Values = z.infer<typeof adminTestSchema>;
 export function NewTestForm({
   subjects,
 }: {
-  subjects: { id: string; nameKz: string }[];
+  subjects: { id: string; nameKz: string; slug: string }[];
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(adminTestSchema),
     defaultValues: {
       subjectId: subjects[0]?.id,
       timeLimitMinutes: 20,
+      hasCalculator: true,
+      hasDraftCanvas: true,
     },
   });
+
+  const subjectId = watch('subjectId');
+  const subject = subjects.find((s) => s.id === subjectId);
+  const isHistory = subject?.slug === 'qazaqstan-tarihy';
+  const hasCalculator = watch('hasCalculator');
+  const hasDraftCanvas = watch('hasDraftCanvas');
 
   async function onSubmit(values: Values) {
     setPending(true);
@@ -53,7 +63,20 @@ export function NewTestForm({
           <Label>Пән</Label>
           <select
             className="w-full rounded-md border border-border bg-white px-3.5 py-2.5 text-[15px]"
-            {...register('subjectId')}
+            {...register('subjectId', {
+              onChange: (e) => {
+                const sub = subjects.find((s) => s.id === e.target.value);
+                if (sub?.slug === 'qazaqstan-tarihy') {
+                  setValue('hasCalculator', false);
+                  setValue('hasDraftCanvas', false);
+                  setValue('timeLimitMinutes', 40);
+                } else {
+                  setValue('hasCalculator', true);
+                  setValue('hasDraftCanvas', true);
+                  setValue('timeLimitMinutes', 20);
+                }
+              },
+            })}
           >
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>
@@ -81,7 +104,48 @@ export function NewTestForm({
             {...register('timeLimitMinutes', { valueAsNumber: true })}
           />
           <FieldError>{errors.timeLimitMinutes?.message}</FieldError>
+          <p className="text-[12px] text-fg-muted mt-1">
+            {isHistory
+              ? '20 сұрақ × 2 минут = 40 минут (ұсынылған)'
+              : '10 сұрақ × 2 минут = 20 минут (ұсынылған)'}
+          </p>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="flex items-start gap-3 p-3.5 rounded-md border border-border cursor-pointer hover:bg-bg-alt">
+            <input
+              type="checkbox"
+              {...register('hasCalculator')}
+              className="mt-1 w-4 h-4 accent-brand"
+            />
+            <div>
+              <div className="text-sm font-semibold">Калькулятор</div>
+              <div className="text-[12px] text-fg-muted mt-0.5">
+                Тест ішінде калькулятор қолжетімді
+              </div>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 p-3.5 rounded-md border border-border cursor-pointer hover:bg-bg-alt">
+            <input
+              type="checkbox"
+              {...register('hasDraftCanvas')}
+              className="mt-1 w-4 h-4 accent-brand"
+            />
+            <div>
+              <div className="text-sm font-semibold">Қаралама</div>
+              <div className="text-[12px] text-fg-muted mt-0.5">
+                Сурет салуға арналған тақта
+              </div>
+            </div>
+          </label>
+        </div>
+
+        {!hasCalculator && !hasDraftCanvas && (
+          <div className="p-3 rounded-md bg-bg-alt border border-border text-[13px] text-fg-muted">
+            Бұл тестте қосымша құрал болмайды — тек сұрақ + жауап нұсқалары.
+          </div>
+        )}
+
         <div className="flex justify-end gap-3 mt-2">
           <Button type="submit" disabled={pending}>
             {pending ? '...' : 'Жасау'}

@@ -41,6 +41,8 @@ export function TestEditor({
     descriptionKz: string | null;
     timeLimitMinutes: number;
     isPublished: boolean;
+    hasCalculator: boolean;
+    hasDraftCanvas: boolean;
   };
   questions: Question[];
 }) {
@@ -49,7 +51,11 @@ export function TestEditor({
     titleKz: test.titleKz,
     descriptionKz: test.descriptionKz ?? '',
     timeLimitMinutes: test.timeLimitMinutes,
+    hasCalculator: test.hasCalculator,
+    hasDraftCanvas: test.hasDraftCanvas,
   });
+  const [showDeleteTest, setShowDeleteTest] = useState(false);
+  const [deletingTest, setDeletingTest] = useState(false);
   const [questions, setQuestions] = useState<Question[]>(initial);
   const [saving, setSaving] = useState(false);
   const [savingAll, setSavingAll] = useState(false);
@@ -187,6 +193,17 @@ export function TestEditor({
     setQuestions((qs) => qs.filter((_, i) => i !== idx));
   }
 
+  async function deleteTest() {
+    setDeletingTest(true);
+    try {
+      await apiFetch(`/api/admin/tests/${test.id}`, { method: 'DELETE' });
+      router.push('/admin');
+      router.refresh();
+    } finally {
+      setDeletingTest(false);
+    }
+  }
+
   async function togglePublish() {
     setPublishing(true);
     try {
@@ -221,6 +238,12 @@ export function TestEditor({
           <Button onClick={saveMeta} disabled={saving}>
             <Check size={14} /> Мәліметті сақтау
           </Button>
+          <Button
+            variant="outlineDanger"
+            onClick={() => setShowDeleteTest(true)}
+          >
+            <Trash2 size={14} /> Тестті жою
+          </Button>
         </div>
       </div>
 
@@ -253,8 +276,73 @@ export function TestEditor({
               onChange={(e) => setMeta({ ...meta, descriptionKz: e.target.value })}
             />
           </div>
+          <label className="flex items-start gap-3 p-3.5 rounded-md border border-border cursor-pointer hover:bg-bg-alt">
+            <input
+              type="checkbox"
+              checked={meta.hasCalculator}
+              onChange={(e) => setMeta({ ...meta, hasCalculator: e.target.checked })}
+              className="mt-1 w-4 h-4 accent-brand"
+            />
+            <div>
+              <div className="text-sm font-semibold">Калькулятор</div>
+              <div className="text-[12px] text-fg-muted mt-0.5">
+                Тест ішінде қолжетімді
+              </div>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 p-3.5 rounded-md border border-border cursor-pointer hover:bg-bg-alt">
+            <input
+              type="checkbox"
+              checked={meta.hasDraftCanvas}
+              onChange={(e) => setMeta({ ...meta, hasDraftCanvas: e.target.checked })}
+              className="mt-1 w-4 h-4 accent-brand"
+            />
+            <div>
+              <div className="text-sm font-semibold">Қаралама</div>
+              <div className="text-[12px] text-fg-muted mt-0.5">
+                Сурет салуға арналған тақта
+              </div>
+            </div>
+          </label>
         </div>
       </Card>
+
+      {showDeleteTest && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-[480px] bg-white rounded-xl shadow-modal border border-border p-6 sm:p-7">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-error-light flex items-center justify-center flex-shrink-0">
+                <Trash2 size={20} className="text-error" />
+              </div>
+              <div className="flex-1">
+                <div className="sa-display text-[19px] font-semibold tracking-[-0.01em]">
+                  Тестті жоюды растайсың ба?
+                </div>
+                <div className="text-sm text-fg-muted mt-1.5 leading-[1.5]">
+                  «{meta.titleKz}» тесті, барлық сұрақтары мен попыткалары мәңгілікке өшіріледі.
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row gap-2.5 mt-5 sm:justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowDeleteTest(false)}
+                className="w-full sm:w-auto"
+              >
+                Бас тарту
+              </Button>
+              <Button
+                variant="danger"
+                onClick={deleteTest}
+                disabled={deletingTest}
+                className="w-full sm:w-auto"
+              >
+                Жою
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-between items-center flex-wrap gap-3">
         <h2 className="sa-display text-[20px] font-semibold tracking-[-0.015em]">

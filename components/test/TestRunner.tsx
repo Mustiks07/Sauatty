@@ -17,6 +17,7 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { SauattyLogo } from '@/components/shared/Logo';
+import { ImageZoom } from '@/components/shared/ImageZoom';
 import { Timer } from './Timer';
 import { ToolDialog } from './ToolDialog';
 
@@ -58,7 +59,12 @@ export type StartPayload = {
   attemptId: string;
   startedAt: string;
   timeLimitMinutes: number;
-  test: { id: string; titleKz: string };
+  test: {
+    id: string;
+    titleKz: string;
+    hasCalculator: boolean;
+    hasDraftCanvas: boolean;
+  };
   questions: Question[];
   initialAnswers?: Record<string, string | null>;
   initialDrafts?: Record<string, string>;
@@ -73,9 +79,12 @@ export function TestRunner(p: StartPayload) {
     p.initialAnswers ?? {},
   );
   const [drafts] = useState<Record<string, string>>(p.initialDrafts ?? {});
-  const [desktopTool, setDesktopTool] = useState<'calc' | 'sketch'>('calc');
+  const hasAnyTool = p.test.hasCalculator || p.test.hasDraftCanvas;
+  const initialTool: 'calc' | 'sketch' = p.test.hasCalculator ? 'calc' : 'sketch';
+  const [desktopTool, setDesktopTool] = useState<'calc' | 'sketch'>(initialTool);
   const [mobileTool, setMobileTool] = useState<'calc' | 'sketch' | null>(null);
   const [sketchFullscreen, setSketchFullscreen] = useState(false);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [finishing, setFinishing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const startedAtMs = useMemo(() => new Date(p.startedAt).getTime(), [p.startedAt]);
@@ -90,12 +99,16 @@ export function TestRunner(p: StartPayload) {
   const saveAnswer = useCallback(
     async (questionId: string, optionId: string | null) => {
       setAnswers((a) => ({ ...a, [questionId]: optionId }));
+      setSaveState('saving');
       try {
         await apiFetch(`/api/attempt/${p.attemptId}/answer`, {
           method: 'POST',
           body: JSON.stringify({ questionId, selectedOptionId: optionId }),
         });
+        setSaveState('saved');
+        setTimeout(() => setSaveState('idle'), 1500);
       } catch (e: any) {
+        setSaveState('idle');
         if (e?.code === 'TIMEOUT') doFinish(true);
       }
     },
@@ -193,6 +206,25 @@ export function TestRunner(p: StartPayload) {
               <span className="sa-num text-fg font-semibold">{current + 1}</span>
               <span className="opacity-50"> / {total}</span>
             </div>
+            {saveState !== 'idle' && (
+              <span
+                className={cn(
+                  'hidden md:inline-flex items-center gap-1 text-[12px] font-medium transition-opacity',
+                  saveState === 'saving' ? 'text-fg-muted' : 'text-success',
+                )}
+              >
+                {saveState === 'saving' ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+                    Сақталуда…
+                  </>
+                ) : (
+                  <>
+                    <Check size={12} /> Сақталды
+                  </>
+                )}
+              </span>
+            )}
             <Timer
               startedAtMs={startedAtMs}
               timeLimitMinutes={p.timeLimitMinutes}
@@ -218,7 +250,13 @@ export function TestRunner(p: StartPayload) {
       </header>
 
       {/* Body */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 p-4 md:p-6 pb-32 lg:pb-6 min-h-0">
+      <div
+        className={cn(
+          'flex-1 grid grid-cols-1 gap-6 p-4 md:p-6 pb-32 lg:pb-6 min-h-0',
+          hasAnyTool && 'lg:grid-cols-[1.4fr_1fr]',
+          !hasAnyTool && 'max-w-[860px] mx-auto w-full',
+        )}
+      >
         {/* Question panel */}
         <Card className="p-6 md:p-10 flex flex-col">
           <div className="text-[13px] font-semibold text-brand uppercase tracking-[0.08em] mb-3.5">
@@ -229,9 +267,12 @@ export function TestRunner(p: StartPayload) {
           </div>
 
           {q.imageUrl && (
-            <div className="p-6 bg-bg-alt rounded-lg mb-6 flex justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={q.imageUrl} alt="" className="max-h-[260px]" />
+            <div className="p-4 sm:p-6 bg-bg-alt rounded-lg mb-6 flex justify-center">
+              <ImageZoom
+                src={q.imageUrl}
+                alt="Сұрақтың суреті"
+                className="max-h-[260px] rounded-md"
+              />
             </div>
           )}
 
@@ -300,58 +341,70 @@ export function TestRunner(p: StartPayload) {
         </Card>
 
         {/* Desktop tools */}
-        <div className="hidden lg:flex flex-col gap-4 min-h-0">
-          <div className="flex gap-2">
-            <ToolTab
-              active={desktopTool === 'calc'}
-              onClick={() => setDesktopTool('calc')}
-              icon={<CalcIcon size={16} />}
-              label={t('test.calculator')}
-            />
-            <ToolTab
-              active={desktopTool === 'sketch'}
-              onClick={() => setDesktopTool('sketch')}
-              icon={<Pencil size={16} />}
-              label={t('test.sketch')}
-            />
-          </div>
+        {hasAnyTool && (
+          <div className="hidden lg:flex flex-col gap-4 min-h-0">
+            <div className="flex gap-2">
+              {p.test.hasCalculator && (
+                <ToolTab
+                  active={desktopTool === 'calc'}
+                  onClick={() => setDesktopTool('calc')}
+                  icon={<CalcIcon size={16} />}
+                  label={t('test.calculator')}
+                />
+              )}
+              {p.test.hasDraftCanvas && (
+                <ToolTab
+                  active={desktopTool === 'sketch'}
+                  onClick={() => setDesktopTool('sketch')}
+                  icon={<Pencil size={16} />}
+                  label={t('test.sketch')}
+                />
+              )}
+            </div>
 
-          {desktopTool === 'calc' ? (
-            <Calculator />
-          ) : (
-            <DraftCanvas
-              attemptId={p.attemptId}
-              questionId={q.id}
-              initialData={drafts[q.id] ?? null}
-              fullscreen={sketchFullscreen}
-              onToggleFullscreen={() => setSketchFullscreen((v) => !v)}
-            />
-          )}
+            {desktopTool === 'calc' && p.test.hasCalculator ? (
+              <Calculator />
+            ) : p.test.hasDraftCanvas ? (
+              <DraftCanvas
+                attemptId={p.attemptId}
+                questionId={q.id}
+                initialData={drafts[q.id] ?? null}
+                fullscreen={sketchFullscreen}
+                onToggleFullscreen={() => setSketchFullscreen((v) => !v)}
+              />
+            ) : null}
 
-          <div className="p-3.5 bg-brand-50 rounded-md border border-brand-light flex gap-2.5 items-start">
-            <Info size={16} className="text-brand flex-shrink-0 mt-0.5" />
-            <div className="text-[13px] leading-[1.5] text-fg">{t('test.tip')}</div>
+            <div className="p-3.5 bg-brand-50 rounded-md border border-brand-light flex gap-2.5 items-start">
+              <Info size={16} className="text-brand flex-shrink-0 mt-0.5" />
+              <div className="text-[13px] leading-[1.5] text-fg">{t('test.tip')}</div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Mobile floating tool buttons */}
-      <div className="lg:hidden fixed bottom-[88px] right-4 flex flex-col gap-2.5 z-30">
-        <button
-          onClick={() => setMobileTool('calc')}
-          aria-label={t('test.calculator')}
-          className="w-[52px] h-[52px] rounded-full bg-white shadow-pop border border-border flex items-center justify-center"
-        >
-          <CalcIcon size={22} className="text-brand" />
-        </button>
-        <button
-          onClick={() => setMobileTool('sketch')}
-          aria-label={t('test.sketch')}
-          className="w-[52px] h-[52px] rounded-full bg-white shadow-pop border border-border flex items-center justify-center"
-        >
-          <Pencil size={22} className="text-brand" />
-        </button>
-      </div>
+      {hasAnyTool && (
+        <div className="lg:hidden fixed bottom-[88px] right-4 flex flex-col gap-2.5 z-30">
+          {p.test.hasCalculator && (
+            <button
+              onClick={() => setMobileTool('calc')}
+              aria-label={t('test.calculator')}
+              className="w-[52px] h-[52px] rounded-full bg-white shadow-pop border border-border flex items-center justify-center"
+            >
+              <CalcIcon size={22} className="text-brand" />
+            </button>
+          )}
+          {p.test.hasDraftCanvas && (
+            <button
+              onClick={() => setMobileTool('sketch')}
+              aria-label={t('test.sketch')}
+              className="w-[52px] h-[52px] rounded-full bg-white shadow-pop border border-border flex items-center justify-center"
+            >
+              <Pencil size={22} className="text-brand" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Mobile sticky bottom nav */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 px-4 py-3.5 bg-white border-t border-border flex gap-2.5 z-20">

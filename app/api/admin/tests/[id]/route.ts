@@ -11,6 +11,8 @@ const patchSchema = z.object({
   titleKz: z.string().min(1).max(160).optional(),
   descriptionKz: z.string().max(500).nullable().optional(),
   timeLimitMinutes: z.number().int().min(1).max(180).optional(),
+  hasCalculator: z.boolean().optional(),
+  hasDraftCanvas: z.boolean().optional(),
   isPublished: z.boolean().optional(),
 });
 
@@ -23,16 +25,23 @@ export async function PATCH(
     const body = patchSchema.parse(await req.json());
 
     if (body.isPublished === true) {
-      // Publish guard: ≥10 questions, each with exactly 4 options and one correct.
+      // Publish guard: subject-specific min questions, each with exactly 4 options and one correct.
       const test = await prisma.test.findUnique({
         where: { id: params.id },
         include: {
+          subject: true,
           questions: { include: { options: true } },
         },
       });
       if (!test) throw new ApiError('NOT_FOUND', 'Тест жоқ', 404);
-      if (test.questions.length < 10) {
-        throw new ApiError('VALIDATION_ERROR', 'Кемінде 10 сұрақ керек', 422);
+      const minQuestions =
+        test.subject.slug === 'qazaqstan-tarihy' ? 20 : 10;
+      if (test.questions.length < minQuestions) {
+        throw new ApiError(
+          'VALIDATION_ERROR',
+          `Кемінде ${minQuestions} сұрақ керек`,
+          422,
+        );
       }
       for (const q of test.questions) {
         if (q.options.length !== 4) {

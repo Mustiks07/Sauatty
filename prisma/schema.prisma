@@ -55,6 +55,8 @@ model Test {
   titleKz          String   @map("title_kz")
   descriptionKz    String?  @map("description_kz")
   timeLimitMinutes Int      @map("time_limit_minutes")
+  hasCalculator    Boolean  @default(true) @map("has_calculator")
+  hasDraftCanvas   Boolean  @default(true) @map("has_draft_canvas")
   isPublished      Boolean  @default(false) @map("is_published")
   createdAt        DateTime @default(now()) @map("created_at")
 

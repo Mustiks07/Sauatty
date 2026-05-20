@@ -13,7 +13,7 @@ async function main() {
     throw new Error('SUPABASE env vars are required');
   }
 
-  // 1) Subject
+  // 1) Subjects
   const subject = await prisma.subject.upsert({
     where: { slug: 'mat-sauattylyq' },
     update: {},
@@ -21,6 +21,15 @@ async function main() {
       slug: 'mat-sauattylyq',
       nameKz: 'Математикалық сауаттылық',
       order: 1,
+    },
+  });
+  await prisma.subject.upsert({
+    where: { slug: 'qazaqstan-tarihy' },
+    update: {},
+    create: {
+      slug: 'qazaqstan-tarihy',
+      nameKz: 'Қазақстан тарихы',
+      order: 2,
     },
   });
 

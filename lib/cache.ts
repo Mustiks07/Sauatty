@@ -15,11 +15,14 @@ export const getPublishedTestsCached = unstable_cache(
   async () => {
     return prisma.test.findMany({
       where: { isPublished: true },
-      include: { _count: { select: { questions: true } } },
-      orderBy: { createdAt: 'asc' },
+      include: {
+        subject: { select: { id: true, slug: true, nameKz: true } },
+        _count: { select: { questions: true } },
+      },
+      orderBy: [{ subject: { order: 'asc' } }, { createdAt: 'asc' }],
     });
   },
-  ['published-tests-v1'],
+  ['published-tests-v2'],
   { tags: [CACHE_TAGS.publishedTests], revalidate: 300 },
 );
 

@@ -15,6 +15,8 @@ export const adminTestSchema = z.object({
   titleKz: z.string().min(1).max(160),
   descriptionKz: z.string().max(500).optional().nullable(),
   timeLimitMinutes: z.number().int().min(1).max(180),
+  hasCalculator: z.boolean().optional(),
+  hasDraftCanvas: z.boolean().optional(),
 });
 
 export const adminQuestionSchema = z.object({

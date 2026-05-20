@@ -109,7 +109,12 @@ export default async function TestPage({ params }: { params: { id: string } }) {
       attemptId={attempt.id}
       startedAt={attempt.startedAt.toISOString()}
       timeLimitMinutes={test.timeLimitMinutes}
-      test={{ id: test.id, titleKz: test.titleKz }}
+      test={{
+        id: test.id,
+        titleKz: test.titleKz,
+        hasCalculator: test.hasCalculator,
+        hasDraftCanvas: test.hasDraftCanvas,
+      }}
       questions={questions}
       initialAnswers={initialAnswers}
       initialDrafts={initialDrafts}

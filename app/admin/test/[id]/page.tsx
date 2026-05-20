@@ -36,6 +36,8 @@ export default async function EditTestPage({
           descriptionKz: test.descriptionKz,
           timeLimitMinutes: test.timeLimitMinutes,
           isPublished: test.isPublished,
+          hasCalculator: test.hasCalculator,
+          hasDraftCanvas: test.hasDraftCanvas,
         }}
         questions={test.questions.map((q) => ({
           id: q.id,
