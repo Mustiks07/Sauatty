@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { ok, handleError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
+import { invalidatePublishedTests } from '@/lib/cache';
 import { adminQuestionSchema } from '@/lib/validators/test';
 
 export const runtime = 'nodejs';
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+    invalidatePublishedTests();
     return ok({ id: q.id });
   } catch (e) {
     return handleError(e);

@@ -1,6 +1,7 @@
 import { Flame, Target, LineChart, Trophy } from 'lucide-react';
 import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getPublishedTestsCached } from '@/lib/cache';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
 import { DashboardList, type DashboardTest } from './DashboardList';
@@ -13,11 +14,7 @@ export default async function Dashboard() {
   const u = await requireRegularUserPage();
 
   const [tests, attempts] = await Promise.all([
-    prisma.test.findMany({
-      where: { isPublished: true },
-      include: { _count: { select: { questions: true } } },
-      orderBy: { createdAt: 'asc' },
-    }),
+    getPublishedTestsCached(),
     prisma.testAttempt.findMany({
       where: { userId: u.db.id, finishedAt: { not: null } },
       select: { testId: true, score: true },

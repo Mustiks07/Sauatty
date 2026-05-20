@@ -13,13 +13,36 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { SauattyLogo } from '@/components/shared/Logo';
 import { Timer } from './Timer';
-import { Calculator } from './Calculator';
-import { DraftCanvas } from './DraftCanvas';
 import { ToolDialog } from './ToolDialog';
+
+// Heavy deps (mathjs ~150kb, react-sketch-canvas ~100kb) — load only when tool
+// is first opened. Initial test bundle drops by ~250kb.
+const Calculator = dynamic(
+  () => import('./Calculator').then((m) => ({ default: m.Calculator })),
+  {
+    loading: () => (
+      <div className="rounded-lg border border-border bg-white shadow-card p-8 text-center text-sm text-fg-muted">
+        Жүктелуде…
+      </div>
+    ),
+  },
+);
+const DraftCanvas = dynamic(
+  () => import('./DraftCanvas').then((m) => ({ default: m.DraftCanvas })),
+  {
+    loading: () => (
+      <div className="rounded-lg border border-border bg-white shadow-card p-8 text-center text-sm text-fg-muted">
+        Жүктелуде…
+      </div>
+    ),
+    ssr: false,
+  },
+);
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 

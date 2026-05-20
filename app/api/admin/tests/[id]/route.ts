@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth';
 import { ok, handleError, ApiError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
+import { invalidatePublishedTests } from '@/lib/cache';
 
 export const runtime = 'nodejs';
 
@@ -55,6 +56,7 @@ export async function PATCH(
       where: { id: params.id },
       data: body,
     });
+    invalidatePublishedTests();
     return ok({ id: updated.id });
   } catch (e) {
     return handleError(e);
@@ -68,6 +70,7 @@ export async function DELETE(
   try {
     await requireAdmin();
     await prisma.test.delete({ where: { id: params.id } });
+    invalidatePublishedTests();
     return ok({ deleted: true });
   } catch (e) {
     return handleError(e);

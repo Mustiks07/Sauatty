@@ -1,9 +1,12 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/api-error';
 
-export async function getSessionUser() {
+// React `cache` dedupes calls within a single server render — same request
+// won't hit Supabase/Prisma more than once for user lookup.
+export const getSessionUser = cache(async () => {
   const supabase = createClient();
   const {
     data: { user },
@@ -12,7 +15,7 @@ export async function getSessionUser() {
 
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   return dbUser ? { auth: user, db: dbUser } : null;
-}
+});
 
 export async function requireUser() {
   const u = await getSessionUser();

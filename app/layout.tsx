@@ -44,6 +44,10 @@ export default async function RootLayout({
   const messages = await getMessages();
   return (
     <html lang="kk" className={`${inter.variable} ${display.variable} ${mono.variable}`}>
+      <head>
+        <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+        <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+      </head>
       <body>
         <NextIntlClientProvider messages={messages} locale="kk">
           {children}

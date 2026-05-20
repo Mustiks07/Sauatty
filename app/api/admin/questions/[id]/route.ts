@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import { ok, handleError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
+import { invalidatePublishedTests } from '@/lib/cache';
 import { adminQuestionSchema } from '@/lib/validators/test';
 
 export const runtime = 'nodejs';
@@ -40,6 +41,7 @@ export async function PATCH(
       }),
     ]);
 
+    invalidatePublishedTests();
     return ok({ id: params.id });
   } catch (e) {
     return handleError(e);
@@ -53,6 +55,7 @@ export async function DELETE(
   try {
     await requireAdmin();
     await prisma.question.delete({ where: { id: params.id } });
+    invalidatePublishedTests();
     return ok({ deleted: true });
   } catch (e) {
     return handleError(e);
