@@ -14,12 +14,14 @@ export function Timer({
   onExpire: () => void;
 }) {
   const deadline = startedAtMs + timeLimitMinutes * 60_000;
-  const [remaining, setRemaining] = useState(() =>
-    Math.max(0, Math.floor((deadline - Date.now()) / 1000)),
-  );
+  // First render is server-safe: show full time. useEffect corrects on mount.
+  const [remaining, setRemaining] = useState(() => timeLimitMinutes * 60);
+  const [mounted, setMounted] = useState(false);
   const fired = useRef(false);
 
   useEffect(() => {
+    setMounted(true);
+    setRemaining(Math.max(0, Math.floor((deadline - Date.now()) / 1000)));
     const id = setInterval(() => {
       const left = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
       setRemaining(left);
@@ -31,7 +33,7 @@ export function Timer({
     return () => clearInterval(id);
   }, [deadline, onExpire]);
 
-  const critical = remaining < 60;
+  const critical = mounted && remaining < 60;
 
   return (
     <div
@@ -41,9 +43,10 @@ export function Timer({
           ? 'bg-error-light text-error-ink border-[#FCA5A5]'
           : 'bg-bg-2 text-fg border-transparent',
       )}
+      suppressHydrationWarning
     >
       <Clock size={16} className={critical ? 'text-error-ink' : 'text-brand'} />
-      {formatMSS(remaining)}
+      <span suppressHydrationWarning>{formatMSS(remaining)}</span>
       {critical && (
         <span
           aria-hidden
