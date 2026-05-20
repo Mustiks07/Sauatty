@@ -39,6 +39,16 @@ export function LoginForm() {
       toast.error(error.message);
       return;
     }
+    // Block admins from logging in here — they must use /manage.
+    try {
+      const res = await fetch('/api/me');
+      const json = await res.json();
+      if (res.ok && json?.data?.role === 'ADMIN') {
+        await supabase.auth.signOut();
+        toast.error('Кіру қате');
+        return;
+      }
+    } catch {}
     router.push('/dashboard');
     router.refresh();
   }

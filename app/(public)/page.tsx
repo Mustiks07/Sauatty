@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import {
   ArrowRight,
   Play,
@@ -14,9 +14,14 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
+import { getSessionUser } from '@/lib/auth';
 
-export default function LandingPage() {
-  const t = useTranslations();
+export const dynamic = 'force-dynamic';
+
+export default async function LandingPage() {
+  const t = await getTranslations();
+  const session = await getSessionUser();
+  const loggedIn = !!session;
   return (
     <div className="bg-white min-h-screen">
       {/* Nav */}
@@ -36,16 +41,26 @@ export default function LandingPage() {
             <a href="#pricing" className="px-3 py-2 text-fg hover:text-brand">
               {t('nav.pricing')}
             </a>
-            <Button asChild variant="ghost" size="md" className="ml-2">
-              <Link href="/kiru">{t('nav.login')}</Link>
-            </Button>
-            <Button asChild variant="primary" size="md">
-              <Link href="/tirkelu">{t('nav.register_free')}</Link>
-            </Button>
+            {loggedIn ? (
+              <Button asChild variant="primary" size="md" className="ml-2">
+                <Link href="/dashboard">Жеке кабинет <ArrowRight size={16} /></Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="md" className="ml-2">
+                  <Link href="/kiru">{t('nav.login')}</Link>
+                </Button>
+                <Button asChild variant="primary" size="md">
+                  <Link href="/tirkelu">{t('nav.register_free')}</Link>
+                </Button>
+              </>
+            )}
           </div>
           <div className="md:hidden">
             <Button asChild size="sm">
-              <Link href="/tirkelu">{t('nav.register_free')}</Link>
+              <Link href={loggedIn ? '/dashboard' : '/tirkelu'}>
+                {loggedIn ? 'Жеке кабинет' : t('nav.register_free')}
+              </Link>
             </Button>
           </div>
         </div>
@@ -110,28 +125,6 @@ export default function LandingPage() {
             </div>
           </div>
           <PhoneMockup />
-        </div>
-      </section>
-
-      {/* Social proof */}
-      <section className="container-page pb-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 border-y border-border py-8">
-          {[
-            ['12 400+', 'оқушы дайындалуда'],
-            ['480+', 'нақты ҰБТ сұрағы'],
-            ['78%', 'ұпайын жақсартты'],
-            ['4.8', 'орташа баға'],
-          ].map(([n, l], i) => (
-            <div
-              key={l}
-              className={`px-8 ${i ? 'md:border-l border-border' : ''}`}
-            >
-              <div className="sa-display sa-num text-[36px] font-bold text-fg tracking-[-0.02em]">
-                {n}
-              </div>
-              <div className="text-sm text-fg-muted mt-1">{l}</div>
-            </div>
-          ))}
         </div>
       </section>
 
