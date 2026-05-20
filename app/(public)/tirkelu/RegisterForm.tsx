@@ -24,7 +24,10 @@ export function RegisterForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(registerSchema) });
+  } = useForm<Values>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { terms: true as true },
+  });
 
   async function onSubmit(values: Values) {
     setPending(true);
@@ -76,17 +79,20 @@ export function RegisterForm() {
         </div>
         <FieldError>{errors.password?.message}</FieldError>
       </div>
-      <label className="flex items-start gap-2.5 text-[13px] text-fg-muted leading-[1.5] -mt-0.5">
-        <input
-          type="checkbox"
-          defaultChecked
-          className="mt-0.5 w-4 h-4 accent-brand"
-        />
-        <span>
-          <a className="text-brand">{t('auth.terms')}</a> {t('auth.and')}{' '}
-          <a className="text-brand">{t('auth.privacy')}</a> {t('auth.terms_accept')}
-        </span>
-      </label>
+      <div>
+        <label className="flex items-start gap-2.5 text-[13px] text-fg-muted leading-[1.5] -mt-0.5 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-0.5 w-4 h-4 accent-brand"
+            {...register('terms')}
+          />
+          <span>
+            <a className="text-brand">{t('auth.terms')}</a> {t('auth.and')}{' '}
+            <a className="text-brand">{t('auth.privacy')}</a> {t('auth.terms_accept')}
+          </span>
+        </label>
+        <FieldError>{errors.terms?.message as string | undefined}</FieldError>
+      </div>
       <Button type="submit" className="w-full mt-1" disabled={pending}>
         {pending ? '...' : t('auth.register')}
       </Button>

@@ -2,6 +2,7 @@ import { Flame, Target, LineChart, Trophy } from 'lucide-react';
 import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getPublishedTestsCached } from '@/lib/cache';
+import { calcStreak } from '@/lib/streak';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
 import { DashboardList, type DashboardTest } from './DashboardList';
@@ -9,28 +10,6 @@ import { DashboardList, type DashboardTest } from './DashboardList';
 export const metadata = { title: 'Тесттер' };
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-function yyyymmdd(d: Date): string {
-  // Almaty timezone-friendly day key.
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Almaty' });
-}
-
-function calcStreak(finishedDates: Date[]): number {
-  if (finishedDates.length === 0) return 0;
-  const days = new Set(finishedDates.map((d) => yyyymmdd(d)));
-  let streak = 0;
-  const cursor = new Date();
-  // Allow today missing — start from yesterday if needed
-  if (!days.has(yyyymmdd(cursor))) {
-    cursor.setDate(cursor.getDate() - 1);
-    if (!days.has(yyyymmdd(cursor))) return 0;
-  }
-  while (days.has(yyyymmdd(cursor))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
 
 export default async function Dashboard() {
   const u = await requireRegularUserPage();

@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { User, Settings, Bell, LogOut, Flame, ChevronRight } from 'lucide-react';
+import { User, Settings, Bell, Flame, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { kk } from 'date-fns/locale';
 import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { calcStreak } from '@/lib/streak';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -32,6 +33,9 @@ export default async function ProfilePage() {
   const avg = totalAttempts ? sumScore / totalAttempts : 0;
   const best = attempts.reduce((m, a) => Math.max(m, a.score ?? 0), 0);
   const pct = sumTotal ? Math.round((sumScore / sumTotal) * 100) : 0;
+  const streak = calcStreak(
+    attempts.map((a) => a.finishedAt).filter((d): d is Date => !!d),
+  );
 
   return (
     <div className="bg-bg-alt min-h-screen">
@@ -42,20 +46,36 @@ export default async function ProfilePage() {
             <div className="flex flex-col items-center text-center mb-6">
               <div
                 className="w-[88px] h-[88px] rounded-full text-white flex items-center justify-center text-[32px] font-bold font-display mb-4"
-                style={{ background: 'linear-gradient(135deg, #2563EB 0%, #F59E0B 100%)' }}
+                style={{
+                  background: 'linear-gradient(135deg, #2563EB 0%, #F59E0B 100%)',
+                }}
               >
                 {initial}
               </div>
               <div className="sa-display text-[22px] font-semibold">{u.db.name}</div>
-              <div className="text-sm text-fg-muted mt-1">{u.db.phone ?? u.db.email}</div>
-              <Badge tone="amber" className="mt-3">
-                <Flame size={11} /> 7 күн серпін
-              </Badge>
+              <div className="text-sm text-fg-muted mt-1">
+                {u.db.phone ?? u.db.email}
+              </div>
+              {streak > 0 && (
+                <Badge tone="amber" className="mt-3">
+                  <Flame size={11} />{' '}
+                  <span className="sa-num">{streak}</span> күн серпін
+                </Badge>
+              )}
             </div>
             <div className="flex flex-col gap-2">
-              <Row icon={<User size={16} className="text-fg-muted" />} label="Профильді өңдеу" />
-              <Row icon={<Settings size={16} className="text-fg-muted" />} label="Параметрлер" />
-              <Row icon={<Bell size={16} className="text-fg-muted" />} label="Хабарламалар" />
+              <DisabledRow
+                icon={<User size={16} className="text-fg-subtle" />}
+                label="Профильді өңдеу"
+              />
+              <DisabledRow
+                icon={<Settings size={16} className="text-fg-subtle" />}
+                label="Параметрлер"
+              />
+              <DisabledRow
+                icon={<Bell size={16} className="text-fg-subtle" />}
+                label="Хабарламалар"
+              />
             </div>
             <div className="h-px bg-border my-5" />
             <LogoutButton />
@@ -63,7 +83,7 @@ export default async function ProfilePage() {
 
           <div className="flex flex-col gap-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-              <Mini label="Попыткалар" value={String(totalAttempts)} />
+              <Mini label="Тапсыру" value={String(totalAttempts)} />
               <Mini label="Орташа балл" value={avg.toFixed(1)} />
               <Mini label="Үздік" value={String(best)} tone="amber" />
               <Mini label="Дұрыс %" value={`${pct}%`} tone="green" />
@@ -72,12 +92,12 @@ export default async function ProfilePage() {
             <Card className="p-0 overflow-hidden">
               <div className="px-6 py-5 border-b border-border flex justify-between items-center">
                 <div className="sa-display text-[18px] font-semibold tracking-[-0.01em]">
-                  Попыткалар тарихы
+                  Тапсыру тарихы
                 </div>
               </div>
               {attempts.length === 0 ? (
                 <div className="px-6 py-10 text-center text-fg-muted">
-                  Әлі попытка жоқ
+                  Әлі тапсыру жоқ
                 </div>
               ) : (
                 <div>
@@ -90,7 +110,12 @@ export default async function ProfilePage() {
                   </div>
                   {attempts.map((a, i) => {
                     const secs = a.finishedAt
-                      ? Math.max(0, Math.floor((a.finishedAt.getTime() - a.startedAt.getTime()) / 1000))
+                      ? Math.max(
+                          0,
+                          Math.floor(
+                            (a.finishedAt.getTime() - a.startedAt.getTime()) / 1000,
+                          ),
+                        )
                       : 0;
                     const score = a.score ?? 0;
                     return (
@@ -142,13 +167,24 @@ export default async function ProfilePage() {
   );
 }
 
-function Row({ icon, label }: { icon: React.ReactNode; label: string }) {
+function DisabledRow({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
-    <button className="flex items-center gap-3 px-3 py-2.5 text-left text-sm font-medium text-fg rounded-md hover:bg-bg-alt">
+    <div
+      title="Жуырда"
+      className="flex items-center gap-3 px-3 py-2.5 text-left text-sm font-medium text-fg-subtle rounded-md cursor-not-allowed select-none"
+    >
       {icon}
       <span className="flex-1">{label}</span>
-      <ChevronRight size={14} className="text-fg-subtle" />
-    </button>
+      <span className="text-[10px] font-semibold text-fg-subtle border border-border rounded px-1 py-px uppercase">
+        soon
+      </span>
+    </div>
   );
 }
 

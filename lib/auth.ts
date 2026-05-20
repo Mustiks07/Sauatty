@@ -13,8 +13,29 @@ export const getSessionUser = cache(async () => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-  return dbUser ? { auth: user, db: dbUser } : null;
+  let dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+
+  // Fallback: if the DB trigger failed for any reason, create the public.users row
+  // on the fly so the user isn't stuck in a redirect loop.
+  if (!dbUser) {
+    try {
+      dbUser = await prisma.user.create({
+        data: {
+          id: user.id,
+          email: user.email ?? null,
+          phone: user.phone ?? null,
+          name:
+            (user.user_metadata?.name as string | undefined) ?? 'Қолданушы',
+          role: 'USER',
+        },
+      });
+    } catch (e) {
+      console.error('[auth] failed to create fallback user row:', e);
+      return null;
+    }
+  }
+
+  return { auth: user, db: dbUser };
 });
 
 export async function requireUser() {

@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { TestRunner, type Question } from '@/components/test/TestRunner';
-import { isExpired } from '@/lib/attempt';
+import { isExpired, finalizeAttempt } from '@/lib/attempt';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -39,44 +39,7 @@ export default async function TestPage({ params }: { params: { id: string } }) {
       },
     });
   } else if (isExpired(attempt.startedAt, test.timeLimitMinutes)) {
-    // Auto-finalize stale attempt and bounce to result.
-    const answers = await prisma.userAnswer.findMany({
-      where: { attemptId: attempt.id },
-      include: {
-        question: { include: { options: { select: { id: true, isCorrect: true } } } },
-      },
-    });
-    let score = 0;
-    const correctIds: string[] = [];
-    const wrongIds: string[] = [];
-    for (const a of answers) {
-      const correctId = a.question.options.find((o) => o.isCorrect)?.id;
-      const isCorrect = !!a.selectedOptionId && a.selectedOptionId === correctId;
-      if (isCorrect) {
-        score += 1;
-        correctIds.push(a.id);
-      } else {
-        wrongIds.push(a.id);
-      }
-    }
-    await Promise.all([
-      correctIds.length
-        ? prisma.userAnswer.updateMany({
-            where: { id: { in: correctIds } },
-            data: { isCorrect: true },
-          })
-        : Promise.resolve(),
-      wrongIds.length
-        ? prisma.userAnswer.updateMany({
-            where: { id: { in: wrongIds } },
-            data: { isCorrect: false },
-          })
-        : Promise.resolve(),
-      prisma.testAttempt.update({
-        where: { id: attempt.id },
-        data: { score, finishedAt: new Date() },
-      }),
-    ]);
+    await finalizeAttempt(attempt.id);
     redirect(`/test/${test.id}/result/${attempt.id}`);
   }
 

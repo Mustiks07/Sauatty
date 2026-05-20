@@ -2,15 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Bell,
-  BookOpen,
-  Book,
-  BarChart3,
-  LineChart,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { BookOpen, LineChart, Settings, Users } from 'lucide-react';
 import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
 
 const ITEMS: {
@@ -111,12 +103,6 @@ export function AdminShell({
 
       <div className="flex-1 min-w-0">
         <div className="h-14 bg-white border-b border-border flex items-center justify-end px-5 md:px-8 gap-3">
-          <button
-            className="text-fg-muted p-2 hover:text-fg"
-            aria-label="notifications"
-          >
-            <Bell size={18} />
-          </button>
           <div className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-border">
             <div className="w-7 h-7 rounded-full bg-fg text-white flex items-center justify-center text-[11px] font-bold">
               {initial}

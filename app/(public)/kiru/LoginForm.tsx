@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
@@ -48,7 +47,9 @@ export function LoginForm() {
         toast.error('Кіру қате');
         return;
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[kiru] /api/me check failed:', err);
+    }
     router.push('/dashboard');
     router.refresh();
   }
@@ -65,9 +66,6 @@ export function LoginForm() {
           <Label htmlFor="password" className="mb-0">
             {t('auth.password')}
           </Label>
-          <Link href="#" className="text-[13px] text-brand font-medium">
-            {t('auth.forgot')}
-          </Link>
         </div>
         <div className="relative">
           <Input

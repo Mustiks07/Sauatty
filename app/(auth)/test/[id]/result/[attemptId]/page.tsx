@@ -62,7 +62,7 @@ export default async function ResultPage({
         {/* Hero */}
         <Card
           className="mb-8 overflow-hidden p-0"
-          style={{ background: 'linear-gradient(135deg, #fff 0%, #F8FAFC 100%)' } as any}
+          style={{ background: 'linear-gradient(135deg, #fff 0%, #F8FAFC 100%)' }}
         >
           <div className="p-8 md:p-12 grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-10 items-center">
             <ScoreRing score={score} total={total} tone={tone} />

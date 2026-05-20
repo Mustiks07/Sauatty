@@ -113,8 +113,10 @@ export default async function LandingPage() {
                   {t('hero.cta_start')} <ArrowRight size={18} />
                 </Link>
               </Button>
-              <Button size="lg" variant="secondary">
-                <Play size={14} /> {t('hero.cta_demo')}
+              <Button asChild size="lg" variant="secondary">
+                <a href="#how">
+                  <Play size={14} /> {t('hero.cta_demo')}
+                </a>
               </Button>
             </div>
             <div className="mt-9 flex flex-wrap gap-7 text-sm text-fg-muted">
@@ -296,9 +298,14 @@ function FooterCol({ title, items }: { title: string; items: string[] }) {
       </div>
       <div className="flex flex-col gap-2.5">
         {items.map((i) => (
-          <a key={i} className="text-sm text-white/70 hover:text-white cursor-pointer">
+          <span
+            key={i}
+            aria-disabled
+            title="Жуырда"
+            className="text-sm text-white/40 cursor-default select-none"
+          >
             {i}
-          </a>
+          </span>
         ))}
       </div>
     </div>

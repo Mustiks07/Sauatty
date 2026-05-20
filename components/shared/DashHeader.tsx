@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bell, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
 import { getSessionUser } from '@/lib/auth';
 
@@ -25,13 +25,6 @@ export async function DashHeader({ active }: { active?: 'tests' | 'progress' | '
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            aria-label="notifications"
-            className="w-9 h-9 rounded-md flex items-center justify-center relative hover:bg-bg-alt"
-          >
-            <Bell size={18} className="text-fg-muted" />
-            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-accent" />
-          </button>
           <Link
             href="/profile"
             className="flex items-center gap-2.5 pr-2.5 pl-1 py-1 rounded-full border border-border hover:bg-bg-alt"

@@ -1,4 +1,4 @@
--- Sync auth.users -> public.users
+-- Sync auth.users -> public.users (idempotent and exception-safe).
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -13,7 +13,12 @@ begin
     coalesce(new.raw_user_meta_data->>'name', 'Қолданушы'),
     'USER',
     now()
-  );
+  )
+  on conflict (id) do nothing;
+  return new;
+exception when others then
+  -- Never block auth signup if profile insert fails — getSessionUser has a fallback.
+  raise warning 'handle_new_user failed: %', sqlerrm;
   return new;
 end;
 $$;

@@ -20,6 +20,9 @@ export const registerSchema = z.object({
   name: z.string().min(2, 'Атыңды енгіз').max(60),
   phone: phoneSchema,
   password: passwordSchema,
+  terms: z.literal(true, {
+    errorMap: () => ({ message: 'Шарттарды қабылдау керек' }),
+  }),
 });
 
 export const onboardingSchema = z.object({
