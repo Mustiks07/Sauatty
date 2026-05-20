@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/components/ui/Button';
 import { SauattyMark } from '@/components/shared/Logo';
 
@@ -13,6 +14,9 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error(error);
+    if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      Sentry.captureException(error);
+    }
   }, [error]);
 
   return (

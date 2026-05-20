@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const withNextIntl = require('next-intl/plugin')('./i18n.ts');
+const { withSentryConfig } = require('@sentry/nextjs');
 
 const nextConfig = {
   reactStrictMode: true,
@@ -14,4 +15,16 @@ const nextConfig = {
   },
 };
 
-module.exports = withNextIntl(nextConfig);
+const withIntl = withNextIntl(nextConfig);
+
+// Only enable Sentry build-time integration when DSN is set, to keep dev fast.
+module.exports = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(withIntl, {
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      disableLogger: true,
+    })
+  : withIntl;

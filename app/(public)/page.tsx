@@ -13,59 +13,26 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
-import { getSessionUser } from '@/lib/auth';
+import { SauattyLogo } from '@/components/shared/Logo';
+import { LandingNav } from './LandingNav';
 
-export const dynamic = 'force-dynamic';
+// Static landing — re-rendered hourly. Session-aware nav lives in the
+// client island <LandingNav /> which calls /api/me on mount.
+export const revalidate = 3600;
 
 export default async function LandingPage() {
   const t = await getTranslations();
-  const session = await getSessionUser();
-  const loggedIn = !!session;
-  const homeHref = session?.db.role === 'ADMIN' ? '/admin' : '/dashboard';
   return (
     <div className="bg-white min-h-screen">
-      {/* Nav */}
-      <nav className="sticky top-0 z-10 border-b border-border bg-white/85 backdrop-blur-md">
-        <div className="container-page flex items-center justify-between py-3.5">
-          <Link href="/" className="flex items-center gap-2.5">
-            <SauattyMark size={28} />
-            <SauattyLogo size={20} />
-          </Link>
-          <div className="hidden md:flex items-center gap-2 text-sm font-medium">
-            <a href="#how" className="px-3 py-2 text-fg hover:text-brand">
-              {t('nav.how')}
-            </a>
-            <a href="#features" className="px-3 py-2 text-fg hover:text-brand">
-              {t('nav.subjects')}
-            </a>
-            <a href="#pricing" className="px-3 py-2 text-fg hover:text-brand">
-              {t('nav.pricing')}
-            </a>
-            {loggedIn ? (
-              <Button asChild variant="primary" size="md" className="ml-2">
-                <Link href={homeHref}>Жеке кабинет <ArrowRight size={16} /></Link>
-              </Button>
-            ) : (
-              <>
-                <Button asChild variant="ghost" size="md" className="ml-2">
-                  <Link href="/kiru">{t('nav.login')}</Link>
-                </Button>
-                <Button asChild variant="primary" size="md">
-                  <Link href="/tirkelu">{t('nav.register_free')}</Link>
-                </Button>
-              </>
-            )}
-          </div>
-          <div className="md:hidden">
-            <Button asChild size="sm">
-              <Link href={loggedIn ? homeHref : '/tirkelu'}>
-                {loggedIn ? 'Жеке кабинет' : t('nav.register_free')}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <LandingNav
+        texts={{
+          how: t('nav.how'),
+          subjects: t('nav.subjects'),
+          pricing: t('nav.pricing'),
+          login: t('nav.login'),
+          register: t('nav.register_free'),
+        }}
+      />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -225,15 +192,28 @@ export default async function LandingPage() {
           </div>
           <FooterCol
             title={t('footer.col_product')}
-            items={['Лендинг', 'Пәндер', 'Бағалар', 'FAQ']}
+            items={[
+              { label: 'Лендинг', href: '/' },
+              { label: 'Пәндер', href: null },
+              { label: 'Бағалар', href: null },
+              { label: 'FAQ', href: null },
+            ]}
           />
           <FooterCol
             title={t('footer.col_company')}
-            items={['Біз туралы', 'Блог', 'Байланыс']}
+            items={[
+              { label: 'Біз туралы', href: null },
+              { label: 'Блог', href: null },
+              { label: 'Байланыс', href: 'mailto:contact@sauatty.kz' },
+            ]}
           />
           <FooterCol
             title={t('footer.col_legal')}
-            items={['Құпиялылық', 'Шарттар', 'Cookies']}
+            items={[
+              { label: 'Құпиялылық', href: '/privacy' },
+              { label: 'Шарттар', href: '/terms' },
+              { label: 'Cookies', href: null },
+            ]}
           />
         </div>
         <div className="container-page mt-12 pt-6 border-t border-white/10 flex justify-between text-[13px] text-white/50">
@@ -290,23 +270,39 @@ function Step({ n, title, body }: { n: string; title: string; body: string }) {
   );
 }
 
-function FooterCol({ title, items }: { title: string; items: string[] }) {
+function FooterCol({
+  title,
+  items,
+}: {
+  title: string;
+  items: { label: string; href: string | null }[];
+}) {
   return (
     <div>
       <div className="text-[13px] font-semibold text-white uppercase tracking-[0.08em] mb-4">
         {title}
       </div>
       <div className="flex flex-col gap-2.5">
-        {items.map((i) => (
-          <span
-            key={i}
-            aria-disabled
-            title="Жуырда"
-            className="text-sm text-white/40 cursor-default select-none"
-          >
-            {i}
-          </span>
-        ))}
+        {items.map((i) =>
+          i.href ? (
+            <Link
+              key={i.label}
+              href={i.href}
+              className="text-sm text-white/70 hover:text-white"
+            >
+              {i.label}
+            </Link>
+          ) : (
+            <span
+              key={i.label}
+              aria-disabled
+              title="Жуырда"
+              className="text-sm text-white/40 cursor-default select-none"
+            >
+              {i.label}
+            </span>
+          ),
+        )}
       </div>
     </div>
   );

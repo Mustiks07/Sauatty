@@ -87,8 +87,14 @@ export function RegisterForm() {
             {...register('terms')}
           />
           <span>
-            <a className="text-brand">{t('auth.terms')}</a> {t('auth.and')}{' '}
-            <a className="text-brand">{t('auth.privacy')}</a> {t('auth.terms_accept')}
+            <a href="/terms" target="_blank" className="text-brand underline">
+              {t('auth.terms')}
+            </a>{' '}
+            {t('auth.and')}{' '}
+            <a href="/privacy" target="_blank" className="text-brand underline">
+              {t('auth.privacy')}
+            </a>{' '}
+            {t('auth.terms_accept')}
           </span>
         </label>
         <FieldError>{errors.terms?.message as string | undefined}</FieldError>

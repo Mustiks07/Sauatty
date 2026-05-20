@@ -1,16 +1,13 @@
-import Link from 'next/link';
-import { User, Settings, Bell, Flame, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
-import { kk } from 'date-fns/locale';
+import { User, Settings, Bell, Flame } from 'lucide-react';
 import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { calcStreak } from '@/lib/streak';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { formatMSS, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { LogoutButton } from './LogoutButton';
+import { AttemptsList, type AttemptRow } from './AttemptsList';
 
 export const metadata = { title: 'Профиль' };
 export const dynamic = 'force-dynamic';
@@ -22,10 +19,20 @@ export default async function ProfilePage() {
 
   const attempts = await prisma.testAttempt.findMany({
     where: { userId: u.db.id, finishedAt: { not: null } },
-    include: { test: true },
+    include: { test: { select: { titleKz: true } } },
     orderBy: { finishedAt: 'desc' },
-    take: 50,
+    take: 200,
   });
+
+  const rows: AttemptRow[] = attempts.map((a) => ({
+    id: a.id,
+    testId: a.testId,
+    testTitleKz: a.test.titleKz,
+    finishedAt: a.finishedAt!.toISOString(),
+    startedAt: a.startedAt.toISOString(),
+    score: a.score ?? 0,
+    totalQuestions: a.totalQuestions,
+  }));
 
   const totalAttempts = attempts.length;
   const sumScore = attempts.reduce((s, a) => s + (a.score ?? 0), 0);
@@ -89,77 +96,7 @@ export default async function ProfilePage() {
               <Mini label="Дұрыс %" value={`${pct}%`} tone="green" />
             </div>
 
-            <Card className="p-0 overflow-hidden">
-              <div className="px-6 py-5 border-b border-border flex justify-between items-center">
-                <div className="sa-display text-[18px] font-semibold tracking-[-0.01em]">
-                  Тапсыру тарихы
-                </div>
-              </div>
-              {attempts.length === 0 ? (
-                <div className="px-6 py-10 text-center text-fg-muted">
-                  Әлі тапсыру жоқ
-                </div>
-              ) : (
-                <div>
-                  <div className="hidden md:grid grid-cols-[90px_1fr_100px_100px_120px] gap-4 px-6 py-3 text-[12px] text-fg-muted font-semibold uppercase tracking-[0.05em] border-b border-border bg-bg-alt">
-                    <div>Күн</div>
-                    <div>Тест</div>
-                    <div>Уақыт</div>
-                    <div>Балл</div>
-                    <div />
-                  </div>
-                  {attempts.map((a, i) => {
-                    const secs = a.finishedAt
-                      ? Math.max(
-                          0,
-                          Math.floor(
-                            (a.finishedAt.getTime() - a.startedAt.getTime()) / 1000,
-                          ),
-                        )
-                      : 0;
-                    const score = a.score ?? 0;
-                    return (
-                      <div
-                        key={a.id}
-                        className={cn(
-                          'grid grid-cols-1 md:grid-cols-[90px_1fr_100px_100px_120px] gap-2 md:gap-4 px-6 py-3.5 items-center text-sm',
-                          i !== attempts.length - 1 && 'border-b border-border',
-                        )}
-                      >
-                        <div className="sa-num text-fg-muted">
-                          {a.finishedAt
-                            ? format(a.finishedAt, 'd MMM', { locale: kk })
-                            : '—'}
-                        </div>
-                        <div className="text-fg font-medium">{a.test.titleKz}</div>
-                        <div className="sa-num text-fg-muted">{formatMSS(secs)}</div>
-                        <div className="sa-num font-semibold">
-                          <span
-                            className={cn(
-                              score >= a.totalQuestions * 0.8
-                                ? 'text-success'
-                                : score >= a.totalQuestions * 0.5
-                                ? 'text-fg'
-                                : 'text-error',
-                            )}
-                          >
-                            {score}
-                          </span>
-                          <span className="text-fg-subtle">/{a.totalQuestions}</span>
-                        </div>
-                        <div className="flex md:justify-end">
-                          <Button asChild variant="ghost" size="sm">
-                            <Link href={`/test/${a.testId}/result/${a.id}`}>
-                              Талдау <ChevronRight size={12} />
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Card>
+            <AttemptsList attempts={rows} />
           </div>
         </div>
       </div>
