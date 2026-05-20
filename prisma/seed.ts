@@ -24,24 +24,53 @@ async function main() {
     },
   });
 
-  // 2) First admin via Supabase Admin API
+  // 2) First admin via Supabase Admin API — idempotent.
   if (adminPhone && adminPassword) {
     const supabaseAdmin = createClient(url, service);
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+
+    // Try create; if exists, look up by phone.
+    let userId: string | undefined;
+    const created = await supabaseAdmin.auth.admin.createUser({
       phone: adminPhone,
       password: adminPassword,
       phone_confirm: true,
       user_metadata: { name: 'Admin' },
     });
-    if (error && !error.message.toLowerCase().includes('already')) {
-      throw error;
+    if (created.data?.user?.id) {
+      userId = created.data.user.id;
+      console.log('Auth user created:', userId);
+    } else if (created.error) {
+      console.log('createUser failed, looking up by phone…', created.error.message);
+      // Find existing.
+      let page = 1;
+      while (!userId) {
+        const list = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+        if (list.error) throw list.error;
+        const found = list.data.users.find((u) => u.phone === adminPhone.replace(/^\+/, '') || u.phone === adminPhone);
+        if (found) {
+          userId = found.id;
+          // Reset password just in case.
+          await supabaseAdmin.auth.admin.updateUserById(found.id, {
+            password: adminPassword,
+            phone_confirm: true,
+          });
+          console.log('Auth user found, password reset:', userId);
+        }
+        if (!list.data.users.length || list.data.users.length < 200) break;
+        page += 1;
+      }
     }
-    if (data?.user?.id) {
-      await prisma.user.update({
-        where: { id: data.user.id },
-        data: { role: 'ADMIN' },
+
+    if (userId) {
+      // Ensure public.users row exists with ADMIN role.
+      await prisma.user.upsert({
+        where: { id: userId },
+        create: { id: userId, phone: adminPhone, name: 'Admin', role: 'ADMIN' },
+        update: { role: 'ADMIN', phone: adminPhone },
       });
-      console.log('Admin created:', data.user.id);
+      console.log('Admin ready:', userId);
+    } else {
+      console.warn('Could not resolve admin user id');
     }
   } else {
     console.warn('SEED_ADMIN_PHONE / SEED_ADMIN_PASSWORD not set — admin not created');

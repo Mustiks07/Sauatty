@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { User, Settings, Bell, LogOut, Flame, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { kk } from 'date-fns/locale';
-import { requireUserPage } from '@/lib/auth';
+import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export default async function ProfilePage() {
-  const u = await requireUserPage();
+  const u = await requireRegularUserPage();
   const initial = u.db.name.charAt(0).toUpperCase();
 
   const attempts = await prisma.testAttempt.findMany({

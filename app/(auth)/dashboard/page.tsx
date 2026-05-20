@@ -1,5 +1,5 @@
 import { Flame, Target, LineChart, Trophy } from 'lucide-react';
-import { requireUserPage } from '@/lib/auth';
+import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export default async function Dashboard() {
-  const u = await requireUserPage();
+  const u = await requireRegularUserPage();
 
   const [tests, attempts] = await Promise.all([
     prisma.test.findMany({

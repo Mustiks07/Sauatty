@@ -34,14 +34,15 @@ export function AdminLoginForm() {
       password: values.password,
     });
     if (error) {
+      console.error('[manage] signIn error:', error);
       setPending(false);
       toast.error(GENERIC_ERROR);
       return;
     }
-    // Server-side role check — generic error if not admin (don't leak existence).
     const res = await fetch('/api/manage/verify', { method: 'POST' });
     const json = await res.json().catch(() => null);
     if (!res.ok || !json?.data?.ok) {
+      console.error('[manage] verify failed:', res.status, json);
       await supabase.auth.signOut();
       setPending(false);
       toast.error(GENERIC_ERROR);

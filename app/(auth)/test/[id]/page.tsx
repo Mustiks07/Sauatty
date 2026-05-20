@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { requireUserPage } from '@/lib/auth';
+import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { TestRunner, type Question } from '@/components/test/TestRunner';
 import { isExpired } from '@/lib/attempt';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export default async function TestPage({ params }: { params: { id: string } }) {
-  const u = await requireUserPage();
+  const u = await requireRegularUserPage();
 
   const test = await prisma.test.findUnique({
     where: { id: params.id },

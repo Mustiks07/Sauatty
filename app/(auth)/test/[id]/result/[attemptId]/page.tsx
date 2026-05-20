@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Check, X, Clock, Redo2, Info } from 'lucide-react';
-import { requireUserPage } from '@/lib/auth';
+import { requireRegularUserPage } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { DashHeader } from '@/components/shared/DashHeader';
 import { Card } from '@/components/ui/Card';
@@ -17,7 +17,7 @@ export default async function ResultPage({
 }: {
   params: { id: string; attemptId: string };
 }) {
-  const u = await requireUserPage();
+  const u = await requireRegularUserPage();
   const attempt = await prisma.testAttempt.findUnique({
     where: { id: params.attemptId },
     include: {

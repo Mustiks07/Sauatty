@@ -32,6 +32,13 @@ export async function requireUserPage() {
   return u;
 }
 
+/** For user-only pages — admins are bounced to /admin (no cross-side access). */
+export async function requireRegularUserPage() {
+  const u = await requireUserPage();
+  if (u.db.role === 'ADMIN') redirect('/admin');
+  return u;
+}
+
 export async function requireAdminPage() {
   const u = await requireUserPage();
   if (u.db.role !== 'ADMIN') redirect('/dashboard');
