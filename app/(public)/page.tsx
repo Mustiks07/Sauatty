@@ -22,6 +22,7 @@ export default async function LandingPage() {
   const t = await getTranslations();
   const session = await getSessionUser();
   const loggedIn = !!session;
+  const homeHref = session?.db.role === 'ADMIN' ? '/admin' : '/dashboard';
   return (
     <div className="bg-white min-h-screen">
       {/* Nav */}
@@ -43,7 +44,7 @@ export default async function LandingPage() {
             </a>
             {loggedIn ? (
               <Button asChild variant="primary" size="md" className="ml-2">
-                <Link href="/dashboard">Жеке кабинет <ArrowRight size={16} /></Link>
+                <Link href={homeHref}>Жеке кабинет <ArrowRight size={16} /></Link>
               </Button>
             ) : (
               <>
@@ -58,7 +59,7 @@ export default async function LandingPage() {
           </div>
           <div className="md:hidden">
             <Button asChild size="sm">
-              <Link href={loggedIn ? '/dashboard' : '/tirkelu'}>
+              <Link href={loggedIn ? homeHref : '/tirkelu'}>
                 {loggedIn ? 'Жеке кабинет' : t('nav.register_free')}
               </Link>
             </Button>
