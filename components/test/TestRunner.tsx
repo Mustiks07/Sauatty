@@ -387,9 +387,9 @@ export function TestRunner(p: StartPayload) {
 
       {/* Finish confirm */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-[480px] bg-white rounded-xl shadow-modal border border-border p-7">
-            <div className="flex items-start gap-3.5">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-[480px] bg-white rounded-xl shadow-modal border border-border p-5 sm:p-7">
+            <div className="flex items-start gap-3 sm:gap-3.5">
               <div
                 className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0',
@@ -402,8 +402,8 @@ export function TestRunner(p: StartPayload) {
                   <Info size={20} className="text-error" />
                 )}
               </div>
-              <div className="flex-1">
-                <div className="sa-display text-[19px] font-semibold tracking-[-0.01em]">
+              <div className="flex-1 min-w-0">
+                <div className="sa-display text-[17px] sm:text-[19px] font-semibold tracking-[-0.01em]">
                   {t('test.confirm_finish_title')}
                 </div>
                 <div className="text-sm text-fg-muted mt-1.5 leading-[1.5]">
@@ -411,21 +411,26 @@ export function TestRunner(p: StartPayload) {
                     ? t('test.confirm_finish_body_all')
                     : t('test.confirm_finish_body_partial', { n: unanswered })}
                 </div>
-                <div className="flex gap-2.5 mt-5 justify-end">
-                  <Button variant="secondary" onClick={() => setShowConfirm(false)}>
-                    {t('test.confirm_continue')}
-                  </Button>
-                  <Button
-                    variant={unanswered === 0 ? 'accent' : 'danger'}
-                    onClick={() => doFinish()}
-                    disabled={finishing}
-                  >
-                    {unanswered === 0
-                      ? t('test.confirm_finish')
-                      : t('test.confirm_finish_anyway')}
-                  </Button>
-                </div>
               </div>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row gap-2.5 mt-5 sm:justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setShowConfirm(false)}
+                className="w-full sm:w-auto"
+              >
+                {t('test.confirm_continue')}
+              </Button>
+              <Button
+                variant={unanswered === 0 ? 'accent' : 'danger'}
+                onClick={() => doFinish()}
+                disabled={finishing}
+                className="w-full sm:w-auto"
+              >
+                {unanswered === 0
+                  ? t('test.confirm_finish')
+                  : t('test.confirm_finish_anyway')}
+              </Button>
             </div>
           </div>
         </div>

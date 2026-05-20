@@ -43,6 +43,7 @@ export function ToolDialog({
                 {title}
               </Dialog.Title>
             </div>
+            <Dialog.Description className="sr-only">{title}</Dialog.Description>
             <Dialog.Close asChild>
               <button
                 aria-label="Жабу"
