@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, FieldError } from '@/components/ui/Input';
+import { PhoneField } from '@/components/ui/PhoneField';
 import { loginSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/client';
 
@@ -23,6 +24,7 @@ export function AdminLoginForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(loginSchema) });
 
@@ -54,11 +56,13 @@ export function AdminLoginForm() {
 
   return (
     <form className="flex flex-col gap-3.5" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div>
-        <Label htmlFor="phone">Телефон</Label>
-        <Input id="phone" placeholder="+7..." autoComplete="username" {...register('phone')} />
-        <FieldError>{errors.phone?.message}</FieldError>
-      </div>
+      <PhoneField
+        control={control}
+        name="phone"
+        label="Телефон"
+        autoComplete="username"
+        error={errors.phone?.message}
+      />
       <div>
         <Label htmlFor="password">Құпиясөз</Label>
         <div className="relative">

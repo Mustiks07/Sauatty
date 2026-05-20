@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, FieldError } from '@/components/ui/Input';
+import { PhoneField } from '@/components/ui/PhoneField';
 import { loginSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/client';
 import { z } from 'zod';
@@ -23,6 +24,7 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<Values>({ resolver: zodResolver(loginSchema) });
 
@@ -56,11 +58,12 @@ export function LoginForm() {
 
   return (
     <form className="flex flex-col gap-3.5" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div>
-        <Label htmlFor="phone">{t('auth.phone')}</Label>
-        <Input id="phone" placeholder={t('auth.phone_ph')} {...register('phone')} />
-        <FieldError>{errors.phone?.message}</FieldError>
-      </div>
+      <PhoneField
+        control={control}
+        name="phone"
+        label={t('auth.phone')}
+        error={errors.phone?.message}
+      />
       <div>
         <div className="flex justify-between items-end mb-1.5">
           <Label htmlFor="password" className="mb-0">
