@@ -10,14 +10,14 @@ import {
 import { Input, Label, FieldError } from './Input';
 
 /**
- * Phone mask `+7 (___) ___-__-__`.
- * Always shows the full template; digits fill the underscores left-to-right.
- * Stored in form state as E.164 (`+7XXXXXXXXXX`).
- * Mobile-friendly: uses `onBeforeInput` to handle deletions reliably across virtual keyboards.
+ * KZ phone mask `+7 (___) ___-__-__`.
+ * Stored as E.164 (`+7XXXXXXXXXX`) in form state.
+ *
+ * Fully controlled — we intercept every keystroke in onBeforeInput and apply
+ * the change ourselves. Native onChange is a no-op (except for autofill).
+ * This avoids the "prefix digit getting counted as a user digit" bug.
  */
 
-// Indices of digit slots in the mask "+7 (___) ___-__-__"
-//                                      0 1 2  3  4 5 6  7 8  9 10 11 12 13 14 15 16 17
 const SLOT_INDICES = [4, 5, 6, 9, 10, 11, 13, 14, 16, 17];
 
 function buildMask(local: string): string {
@@ -36,18 +36,7 @@ function buildMask(local: string): string {
 
 function localFromE164(value: string): string {
   const digits = (value ?? '').replace(/\D/g, '');
-  // If 11+ digits and starts with 7, drop the leading country-code 7
-  if (digits.length > 10 && digits.startsWith('7')) {
-    return digits.slice(1, 11);
-  }
-  return digits.slice(0, 10);
-}
-
-function localFromAnyInput(text: string): string {
-  const digits = (text ?? '').replace(/\D/g, '');
-  if (digits.length > 10 && digits.startsWith('7')) {
-    return digits.slice(1, 11);
-  }
+  if (digits.length > 10 && digits.startsWith('7')) return digits.slice(1, 11);
   return digits.slice(0, 10);
 }
 
@@ -76,8 +65,7 @@ export function PhoneField<T extends FieldValues>({
   function setCaret(pos: number) {
     requestAnimationFrame(() => {
       const el = inputRef.current;
-      if (!el) return;
-      if (document.activeElement !== el) return;
+      if (!el || document.activeElement !== el) return;
       try {
         el.setSelectionRange(pos, pos);
       } catch {
@@ -95,9 +83,10 @@ export function PhoneField<T extends FieldValues>({
         const local = localFromE164((field.value as string) ?? '');
         const display = buildMask(local);
 
-        const commit = (newLocal: string) => {
-          field.onChange(newLocal ? '+7' + newLocal : '');
-          setCaret(caretAfterDigits(newLocal.length));
+        const commit = (nextLocal: string) => {
+          const clamped = nextLocal.slice(0, 10);
+          field.onChange(clamped ? '+7' + clamped : '');
+          setCaret(caretAfterDigits(clamped.length));
         };
 
         return (
@@ -114,9 +103,16 @@ export function PhoneField<T extends FieldValues>({
               onFocus={() => setCaret(caretAfterDigits(local.length))}
               onClick={() => setCaret(caretAfterDigits(local.length))}
               onBeforeInput={(e) => {
-                const ne = e as unknown as InputEvent;
+                const ne = e.nativeEvent as InputEvent;
                 const type = ne.inputType;
-                // Mobile-safe delete handling (Backspace on virtual keyboards).
+
+                if (type === 'insertText') {
+                  e.preventDefault();
+                  const data = ne.data ?? '';
+                  const digits = data.replace(/\D/g, '');
+                  if (digits) commit(local + digits);
+                  return;
+                }
                 if (
                   type === 'deleteContentBackward' ||
                   type === 'deleteContentForward' ||
@@ -126,16 +122,23 @@ export function PhoneField<T extends FieldValues>({
                   commit(local.slice(0, -1));
                   return;
                 }
+                // insertFromPaste — handled in onPaste; let others through
               }}
               onChange={(e) => {
-                // Insertions: extract digits from new value, normalize, commit.
-                const newLocal = localFromAnyInput(e.target.value);
-                if (newLocal !== local) commit(newLocal);
+                // Most input handled in onBeforeInput. This fires only on
+                // browser autofill (iCloud Keychain etc.). Parse the full
+                // pasted value as if it were paste data.
+                if (e.target.value === display) return;
+                let d = e.target.value.replace(/\D/g, '');
+                if (d.length > 10 && d.startsWith('7')) d = d.slice(1);
+                commit(d);
               }}
               onPaste={(e) => {
                 e.preventDefault();
                 const text = e.clipboardData.getData('text');
-                commit(localFromAnyInput(text));
+                let d = text.replace(/\D/g, '');
+                if (d.length > 10 && d.startsWith('7')) d = d.slice(1);
+                commit(d);
               }}
             />
             <FieldError>{error}</FieldError>
