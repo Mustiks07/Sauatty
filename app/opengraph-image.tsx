@@ -17,7 +17,6 @@ export default function OG() {
           flexDirection: 'column',
           padding: 80,
           position: 'relative',
-          fontFamily: 'sans-serif',
         }}
       >
         {/* corner orbs */}
@@ -28,9 +27,10 @@ export default function OG() {
             right: -160,
             width: 480,
             height: 480,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, #DBEAFE 0%, transparent 70%)',
+            borderRadius: 9999,
+            background: '#DBEAFE',
+            opacity: 0.6,
+            display: 'flex',
           }}
         />
         <div
@@ -40,96 +40,80 @@ export default function OG() {
             left: -120,
             width: 380,
             height: 380,
-            borderRadius: '50%',
-            background:
-              'radial-gradient(circle, #FEF3C7 0%, transparent 70%)',
+            borderRadius: 9999,
+            background: '#FEF3C7',
+            opacity: 0.6,
+            display: 'flex',
           }}
         />
 
-        {/* brand */}
+        {/* brand row */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 18,
             marginBottom: 60,
+            zIndex: 1,
           }}
         >
           <div
             style={{
-              width: 72,
-              height: 72,
+              width: 80,
+              height: 80,
               background: '#2563EB',
-              borderRadius: 18,
+              borderRadius: 20,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              marginRight: 24,
+              color: '#fff',
+              fontSize: 48,
+              fontWeight: 700,
+              lineHeight: 1,
             }}
           >
-            <svg width="52" height="52" viewBox="0 0 40 40">
-              <path
-                d="M27 13 c-1.5-2-4-3-7-3 -4 0-7 2-7 5.5 0 3 2.5 4.5 6 5.5 3.5 1 5 2 5 3.8 0 1.8-2 3-4.5 3 -3 0-5-1.2-6.5-3.2"
-                stroke="#fff"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <circle cx="29" cy="27" r="4.5" fill="#F59E0B" />
-              <path
-                d="M27 27 l1.5 1.5 L31 25.5"
-                stroke="#fff"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </svg>
+            S
           </div>
           <div
             style={{
-              fontSize: 56,
+              fontSize: 64,
               fontWeight: 700,
               color: '#0F172A',
               letterSpacing: '-0.025em',
               display: 'flex',
-              alignItems: 'baseline',
             }}
           >
-            sauatt
-            <div style={{ position: 'relative', display: 'flex' }}>
-              <span>y</span>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: -8,
-                  height: 8,
-                  background: '#F59E0B',
-                  borderRadius: 999,
-                }}
-              />
-            </div>
+            sauatty
           </div>
         </div>
 
         {/* headline */}
         <div
           style={{
-            fontSize: 92,
+            fontSize: 88,
             fontWeight: 700,
-            lineHeight: 1.04,
+            lineHeight: 1.06,
             letterSpacing: '-0.03em',
             color: '#0F172A',
             display: 'flex',
-            flexDirection: 'column',
+            zIndex: 1,
           }}
         >
-          <div>ҰБТ-ға дайындал.</div>
-          <div>
-            <span style={{ color: '#2563EB' }}>Бастан-аяқ </span>
-            <span style={{ color: '#F59E0B' }}>қазақша.</span>
-          </div>
+          ҰБТ-ға дайындал.
+        </div>
+        <div
+          style={{
+            fontSize: 88,
+            fontWeight: 700,
+            lineHeight: 1.06,
+            letterSpacing: '-0.03em',
+            display: 'flex',
+            zIndex: 1,
+            marginTop: 4,
+          }}
+        >
+          <span style={{ color: '#2563EB' }}>Бастан-аяқ&nbsp;</span>
+          <span style={{ color: '#F59E0B' }}>қазақша.</span>
         </div>
 
         {/* subtitle */}
@@ -137,12 +121,34 @@ export default function OG() {
           style={{
             fontSize: 32,
             color: '#64748B',
-            marginTop: 30,
-            maxWidth: 920,
+            marginTop: 32,
+            maxWidth: 960,
             lineHeight: 1.4,
+            display: 'flex',
+            zIndex: 1,
           }}
         >
           Нақты формат, таймер, калькулятор және қаралама — бір жерде.
+        </div>
+
+        {/* footer chip */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 64,
+            left: 80,
+            display: 'flex',
+            alignItems: 'center',
+            background: '#0F172A',
+            color: '#fff',
+            padding: '14px 24px',
+            borderRadius: 9999,
+            fontSize: 24,
+            fontWeight: 600,
+            zIndex: 1,
+          }}
+        >
+          www.sauatty.kz
         </div>
       </div>
     ),
