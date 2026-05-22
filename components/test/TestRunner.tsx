@@ -89,10 +89,21 @@ export function TestRunner(p: StartPayload) {
   const [showConfirm, setShowConfirm] = useState(false);
   const startedAtMs = useMemo(() => new Date(p.startedAt).getTime(), [p.startedAt]);
 
-  const q = p.questions[current];
   const total = p.questions.length;
-  const isLast = current === total - 1;
-  const isFirst = current === 0;
+  // Defensive clamp — if questions shrink (e.g. admin removed one), avoid OOB access.
+  const safeCurrent = Math.min(current, Math.max(0, total - 1));
+  // Fallback question to keep hook order stable; UI handles total === 0 below.
+  const q =
+    p.questions[safeCurrent] ??
+    ({
+      id: '__empty__',
+      order: 0,
+      textKz: '',
+      imageUrl: null,
+      options: [],
+    } as Question);
+  const isLast = total === 0 ? true : safeCurrent === total - 1;
+  const isFirst = total === 0 ? true : safeCurrent === 0;
   const answered = Object.values(answers).filter(Boolean).length;
   const unanswered = total - answered;
 
@@ -192,7 +203,7 @@ export function TestRunner(p: StartPayload) {
                   key={i}
                   className={cn(
                     'h-2 rounded transition-all',
-                    i === current
+                    i === safeCurrent
                       ? 'w-6 bg-brand'
                       : answers[p.questions[i].id]
                       ? 'w-2 bg-brand-light'
@@ -203,7 +214,7 @@ export function TestRunner(p: StartPayload) {
             </div>
             <div className="text-[13px] text-fg-muted">
               Сұрақ{' '}
-              <span className="sa-num text-fg font-semibold">{current + 1}</span>
+              <span className="sa-num text-fg font-semibold">{safeCurrent + 1}</span>
               <span className="opacity-50"> / {total}</span>
             </div>
             {saveState !== 'idle' && (
@@ -244,7 +255,7 @@ export function TestRunner(p: StartPayload) {
         <div className="lg:hidden h-[3px] bg-bg-2">
           <div
             className="h-full bg-brand transition-all"
-            style={{ width: `${((current + 1) / total) * 100}%` }}
+            style={{ width: `${total ? ((safeCurrent + 1) / total) * 100 : 0}%` }}
           />
         </div>
       </header>

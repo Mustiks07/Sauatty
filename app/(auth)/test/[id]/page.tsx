@@ -25,6 +25,7 @@ export default async function TestPage({ params }: { params: { id: string } }) {
     },
   });
   if (!test || !test.isPublished) notFound();
+  if (test.questions.length === 0) notFound();
 
   let attempt = await prisma.testAttempt.findFirst({
     where: { userId: u.db.id, testId: test.id, finishedAt: null },

@@ -58,6 +58,16 @@ export function DraftCanvas({
     }
   }, [questionId, initialData]);
 
+  // Clean up pending debounce on unmount — avoids late save after navigation.
+  useEffect(() => {
+    return () => {
+      if (debounce.current) {
+        clearTimeout(debounce.current);
+        debounce.current = null;
+      }
+    };
+  }, []);
+
   function scheduleSave() {
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(async () => {

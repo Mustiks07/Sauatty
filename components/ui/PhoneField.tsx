@@ -13,11 +13,13 @@ import { Input, Label, FieldError } from './Input';
  * KZ phone mask `+7 (___) ___-__-__`.
  * Stored as E.164 (`+7XXXXXXXXXX`) in form state.
  *
- * Fully controlled — we intercept every keystroke in onBeforeInput and apply
- * the change ourselves. Native onChange is a no-op (except for autofill).
- * This avoids the "prefix digit getting counted as a user digit" bug.
+ * One-keystroke = one-digit guarantee:
+ *   - Stored format ALWAYS starts with `+7` → localFromE164 strips first 7.
+ *   - On input change we look only at chars AFTER the `+7 (` prefix.
+ *   - Backspace on formatting char triggers a manual digit removal.
  */
 
+const PREFIX = '+7 (';
 const SLOT_INDICES = [4, 5, 6, 9, 10, 11, 13, 14, 16, 17];
 
 function buildMask(local: string): string {
@@ -36,8 +38,15 @@ function buildMask(local: string): string {
 
 function localFromE164(value: string): string {
   const digits = (value ?? '').replace(/\D/g, '');
-  if (digits.length > 10 && digits.startsWith('7')) return digits.slice(1, 11);
-  return digits.slice(0, 10);
+  // Stored format is always "+7" + local digits — strip the leading 7.
+  return digits.startsWith('7') ? digits.slice(1, 11) : digits.slice(0, 10);
+}
+
+function localFromPaste(text: string): string {
+  let d = (text ?? '').replace(/\D/g, '');
+  // 11-digit numbers with leading 7 or 8 → drop the country/trunk code.
+  if (d.length > 10 && (d.startsWith('7') || d.startsWith('8'))) d = d.slice(1);
+  return d.slice(0, 10);
 }
 
 function caretAfterDigits(filledCount: number): number {
@@ -102,43 +111,32 @@ export function PhoneField<T extends FieldValues>({
               onBlur={field.onBlur}
               onFocus={() => setCaret(caretAfterDigits(local.length))}
               onClick={() => setCaret(caretAfterDigits(local.length))}
-              onBeforeInput={(e) => {
-                const ne = e.nativeEvent as InputEvent;
-                const type = ne.inputType;
-
-                if (type === 'insertText') {
-                  e.preventDefault();
-                  const data = ne.data ?? '';
-                  const digits = data.replace(/\D/g, '');
-                  if (digits) commit(local + digits);
-                  return;
-                }
-                if (
-                  type === 'deleteContentBackward' ||
-                  type === 'deleteContentForward' ||
-                  type === 'deleteByCut'
-                ) {
-                  e.preventDefault();
-                  commit(local.slice(0, -1));
-                  return;
-                }
-                // insertFromPaste — handled in onPaste; let others through
-              }}
               onChange={(e) => {
-                // Most input handled in onBeforeInput. This fires only on
-                // browser autofill (iCloud Keychain etc.). Parse the full
-                // pasted value as if it were paste data.
-                if (e.target.value === display) return;
-                let d = e.target.value.replace(/\D/g, '');
-                if (d.length > 10 && d.startsWith('7')) d = d.slice(1);
-                commit(d);
+                const v = e.target.value;
+
+                // Autofill / paste — value lost mask structure entirely.
+                if (!v.startsWith(PREFIX)) {
+                  commit(localFromPaste(v));
+                  return;
+                }
+
+                // Normal typing — extract digits AFTER the prefix only.
+                const afterPrefix = v.slice(PREFIX.length);
+                let newDigits = afterPrefix.replace(/\D/g, '').slice(0, 10);
+
+                // Backspace on a formatting char (space / paren / dash):
+                // value got shorter but digit count didn't drop — manually
+                // remove the last digit.
+                if (v.length < display.length && newDigits.length >= local.length) {
+                  newDigits = local.slice(0, -1);
+                }
+
+                commit(newDigits);
               }}
               onPaste={(e) => {
                 e.preventDefault();
                 const text = e.clipboardData.getData('text');
-                let d = text.replace(/\D/g, '');
-                if (d.length > 10 && d.startsWith('7')) d = d.slice(1);
-                commit(d);
+                commit(localFromPaste(text));
               }}
             />
             <FieldError>{error}</FieldError>
