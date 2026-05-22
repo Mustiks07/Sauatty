@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input, Label, FieldError } from '@/components/ui/Input';
+import { PhoneField } from '@/components/ui/PhoneField';
 import { registerSchema } from '@/lib/validators/auth';
 import { createClient } from '@/lib/supabase/client';
 import { z } from 'zod';
@@ -23,6 +24,7 @@ export function RegisterForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(registerSchema),
@@ -53,11 +55,12 @@ export function RegisterForm() {
         <Input id="name" placeholder={t('auth.name_ph')} {...register('name')} />
         <FieldError>{errors.name?.message}</FieldError>
       </div>
-      <div>
-        <Label htmlFor="phone">{t('auth.phone')}</Label>
-        <Input id="phone" placeholder={t('auth.phone_ph')} {...register('phone')} />
-        <FieldError>{errors.phone?.message}</FieldError>
-      </div>
+      <PhoneField
+        control={control}
+        name="phone"
+        label={t('auth.phone')}
+        error={errors.phone?.message}
+      />
       <div>
         <Label htmlFor="password">{t('auth.password')}</Label>
         <div className="relative">
