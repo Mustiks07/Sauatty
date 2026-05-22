@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://www.sauatty.kz/opengraph-image',
+        url: 'https://www.sauatty.kz/og.png',
         width: 1200,
         height: 630,
         alt: 'Sauatty — ҰБТ-ға қазақша дайындық',
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Sauatty — ҰБТ-ға қазақша дайындық',
     description: 'Қазақ тіліндегі ҰБТ-ға дайындалу платформасы.',
-    images: ['https://www.sauatty.kz/opengraph-image'],
+    images: ['https://www.sauatty.kz/og.png'],
   },
   alternates: {
     canonical: 'https://www.sauatty.kz',
