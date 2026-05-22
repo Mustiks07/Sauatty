@@ -30,10 +30,10 @@ const ITEMS: {
   },
   {
     key: 'stats',
-    href: null,
+    href: '/admin/stats',
     label: 'Статистика',
     icon: LineChart,
-    match: () => false,
+    match: (p) => p.startsWith('/admin/stats'),
   },
   {
     key: 'settings',

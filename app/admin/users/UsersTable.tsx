@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -89,9 +90,10 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
           </div>
         ) : (
           filtered.map((u, i) => (
-            <div
+            <Link
               key={u.id}
-              className={`grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_100px_140px] px-5 py-3.5 items-center text-sm gap-2 ${
+              href={`/admin/users/${u.id}`}
+              className={`grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_100px_140px] px-5 py-3.5 items-center text-sm gap-2 hover:bg-bg-alt transition-colors ${
                 i === filtered.length - 1 ? '' : 'border-b border-border'
               }`}
             >
@@ -105,7 +107,7 @@ export function UsersTable({ users }: { users: AdminUser[] }) {
               <div className="sa-num text-fg-muted">
                 {format(new Date(u.createdAt), 'd MMM yyyy', { locale: kk })}
               </div>
-            </div>
+            </Link>
           ))
         )}
       </Card>

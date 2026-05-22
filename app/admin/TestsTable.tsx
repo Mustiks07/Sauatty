@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, Edit } from 'lucide-react';
+import { Search, Edit, BarChart3 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -73,7 +73,7 @@ export function TestsTable({ tests }: { tests: AdminTest[] }) {
       </div>
 
       <Card className="p-0 overflow-hidden">
-        <div className="hidden md:grid grid-cols-[60px_1fr_140px_80px_120px_90px_120px_60px] px-5 py-3 text-[12px] text-fg-muted font-semibold uppercase tracking-[0.05em] border-b border-border bg-bg-alt">
+        <div className="hidden md:grid grid-cols-[60px_1fr_140px_80px_120px_90px_120px_90px] px-5 py-3 text-[12px] text-fg-muted font-semibold uppercase tracking-[0.05em] border-b border-border bg-bg-alt">
           <div>ID</div>
           <div>Атауы</div>
           <div>Пән</div>
@@ -91,7 +91,7 @@ export function TestsTable({ tests }: { tests: AdminTest[] }) {
           filtered.map((t, i) => (
             <div
               key={t.id}
-              className={`grid grid-cols-1 md:grid-cols-[60px_1fr_140px_80px_120px_90px_120px_60px] px-5 py-3.5 items-center text-sm gap-2 ${
+              className={`grid grid-cols-1 md:grid-cols-[60px_1fr_140px_80px_120px_90px_120px_90px] px-5 py-3.5 items-center text-sm gap-2 ${
                 i === filtered.length - 1 ? '' : 'border-b border-border'
               }`}
             >
@@ -120,6 +120,18 @@ export function TestsTable({ tests }: { tests: AdminTest[] }) {
                   variant="ghost"
                   size="icon"
                   className="text-fg-muted h-8 w-8"
+                  title="Аналитика"
+                >
+                  <Link href={`/admin/test/${t.id}/analytics`}>
+                    <BarChart3 size={14} />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="text-fg-muted h-8 w-8"
+                  title="Өңдеу"
                 >
                   <Link href={`/admin/test/${t.id}`}>
                     <Edit size={14} />
