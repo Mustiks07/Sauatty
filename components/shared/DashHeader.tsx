@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
+import { UserAvatar } from '@/components/shared/UserAvatar';
 import { getSessionUser } from '@/lib/auth';
 
 export async function DashHeader({ active }: { active?: 'tests' | 'progress' | 'history' }) {
   const u = await getSessionUser();
   const name = u?.db.name ?? 'Қолданушы';
-  const initial = name.charAt(0).toUpperCase();
   return (
     <header className="bg-white border-b border-border">
       <div className="container-page flex items-center justify-between py-3.5">
@@ -29,12 +29,7 @@ export async function DashHeader({ active }: { active?: 'tests' | 'progress' | '
             href="/profile"
             className="flex items-center gap-2.5 pr-2.5 pl-1 py-1 rounded-full border border-border hover:bg-bg-alt"
           >
-            <span
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-              style={{ background: 'linear-gradient(135deg, #2563EB, #F59E0B)' }}
-            >
-              {initial}
-            </span>
+            <UserAvatar name={name} preset={u?.db.avatarPreset} size={28} />
             <span className="text-sm font-medium hidden sm:inline">{name}</span>
             <ChevronDown size={14} className="text-fg-muted" />
           </Link>

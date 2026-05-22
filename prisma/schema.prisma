@@ -9,12 +9,14 @@ datasource db {
 }
 
 model User {
-  id        String   @id @db.Uuid
-  phone     String?  @unique
-  email     String?  @unique
-  name      String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String    @id @db.Uuid
+  phone        String?   @unique
+  email        String?   @unique
+  name         String
+  role         Role      @default(USER)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  examDate     DateTime? @map("exam_date") @db.Date
+  avatarPreset String?   @default("blue-amber") @map("avatar_preset")
 
   attempts TestAttempt[]
 

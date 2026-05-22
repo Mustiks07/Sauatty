@@ -5,6 +5,7 @@ import { getPublishedTestsCached } from '@/lib/cache';
 import { calcStreak } from '@/lib/streak';
 import { finalizeStaleAttemptsForUser } from '@/lib/attempt';
 import { DashHeader } from '@/components/shared/DashHeader';
+import { UbtCountdown } from '@/components/shared/UbtCountdown';
 import { Card } from '@/components/ui/Card';
 import { DashboardList, type DashboardTest } from './DashboardList';
 
@@ -57,7 +58,7 @@ export default async function Dashboard() {
       <DashHeader active="tests" />
 
       <div className="container-page py-10 md:py-12">
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
           <div>
             <h1 className="sa-display text-[28px] md:text-[36px] font-semibold tracking-[-0.02em] m-0">
               Сәлем, {u.db.name}!
@@ -68,17 +69,22 @@ export default async function Dashboard() {
                 : 'Бүгін бір тест тапсырып, серпінді баста.'}
             </p>
           </div>
-          {streak > 0 && (
-            <div
-              className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-accent-light rounded-full"
-              title="Күн қатарынан"
-            >
-              <Flame size={18} className="text-accent-hover" />
-              <span className="sa-num text-sm font-semibold text-accent-ink">
-                {streak} күн серпін
-              </span>
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {u.db.examDate && (
+              <UbtCountdown examDate={u.db.examDate} variant="badge" />
+            )}
+            {streak > 0 && (
+              <div
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-accent-light rounded-full"
+                title="Күн қатарынан"
+              >
+                <Flame size={18} className="text-accent-hover" />
+                <span className="sa-num text-sm font-semibold text-accent-ink">
+                  {streak} күн серпін
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10">
