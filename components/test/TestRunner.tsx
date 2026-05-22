@@ -86,6 +86,7 @@ export function TestRunner(p: StartPayload) {
   const [sketchFullscreen, setSketchFullscreen] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [finishing, setFinishing] = useState(false);
+  const finishingRef = useRef(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const startedAtMs = useMemo(() => new Date(p.startedAt).getTime(), [p.startedAt]);
 
@@ -109,6 +110,7 @@ export function TestRunner(p: StartPayload) {
 
   const saveAnswer = useCallback(
     async (questionId: string, optionId: string | null) => {
+      const prev = answers[questionId];
       setAnswers((a) => ({ ...a, [questionId]: optionId }));
       setSaveState('saving');
       try {
@@ -120,26 +122,37 @@ export function TestRunner(p: StartPayload) {
         setTimeout(() => setSaveState('idle'), 1500);
       } catch (e: any) {
         setSaveState('idle');
-        if (e?.code === 'TIMEOUT') doFinish(true);
+        if (e?.code === 'TIMEOUT') {
+          doFinish(true);
+        } else {
+          // Rollback optimistic update on real network/server error.
+          setAnswers((a) => ({ ...a, [questionId]: prev ?? null }));
+        }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [p.attemptId],
+    [p.attemptId, answers],
   );
 
   const doFinish = useCallback(
     async (silent = false) => {
-      if (finishing) return;
+      // Use ref for atomic check — React state batching can let two concurrent
+      // calls both pass the guard before either setState lands.
+      if (finishingRef.current) return;
+      finishingRef.current = true;
       setFinishing(true);
       try {
         await apiFetch(`/api/attempt/${p.attemptId}/finish`, { method: 'POST' });
         router.push(`/test/${p.test.id}/result/${p.attemptId}`);
         router.refresh();
       } catch {
-        if (!silent) setFinishing(false);
+        if (!silent) {
+          finishingRef.current = false;
+          setFinishing(false);
+        }
       }
     },
-    [finishing, p.attemptId, p.test.id, router],
+    [p.attemptId, p.test.id, router],
   );
 
   const onExpire = useCallback(() => {

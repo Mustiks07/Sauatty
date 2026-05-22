@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { calcStreak } from '@/lib/streak';
 
 export type DayBucket = { day: string; value: number };
 
@@ -241,20 +242,9 @@ export async function getUserStats(userId: string) {
     new Date(),
   );
 
-  // Streak (consecutive days, Almaty TZ)
-  const finishedDates = finished
-    .map((a) => a.finishedAt)
-    .filter((d): d is Date => !!d);
-  const days = new Set(finishedDates.map((d) => yyyymmdd(d)));
-  let streak = 0;
-  const cursor = new Date();
-  if (!days.has(yyyymmdd(cursor))) {
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  while (days.has(yyyymmdd(cursor))) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
+  const streak = calcStreak(
+    finished.map((a) => a.finishedAt).filter((d): d is Date => !!d),
+  );
 
   return {
     user,

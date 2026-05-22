@@ -119,6 +119,7 @@ model TestAttempt {
 
   @@index([userId, testId, score])
   @@index([userId, finishedAt])
+  @@index([testId, finishedAt])
   @@map("test_attempts")
 }
 
@@ -134,6 +135,7 @@ model UserAnswer {
   selectedOption AnswerOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
 
   @@unique([attemptId, questionId])
+  @@index([questionId])
   @@map("user_answers")
 }
 

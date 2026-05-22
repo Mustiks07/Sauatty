@@ -7,6 +7,7 @@ import { kk } from 'date-fns/locale';
 import { Check, X, Info, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Pill } from '@/components/ui/Pill';
 import { ImageZoom } from '@/components/shared/ImageZoom';
 import { cn } from '@/lib/utils';
 
@@ -124,30 +125,6 @@ export function MistakesList({ mistakes }: { mistakes: Mistake[] }) {
         ))}
       </div>
     </>
-  );
-}
-
-function Pill({
-  active,
-  onClick,
-  children,
-}: {
-  active?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors border',
-        active
-          ? 'bg-white text-fg border-border shadow-card'
-          : 'bg-transparent text-fg-muted border-transparent hover:text-fg',
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

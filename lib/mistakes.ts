@@ -64,6 +64,21 @@ export async function getUserMistakes(userId: string) {
 }
 
 export async function countUserMistakes(userId: string): Promise<number> {
-  const list = await getUserMistakes(userId);
-  return list.length;
+  // Thin query — just questionId + isCorrect + finishedAt ordering. No JOINs to text/options.
+  const answers = await prisma.userAnswer.findMany({
+    where: { attempt: { userId, finishedAt: { not: null } } },
+    select: {
+      questionId: true,
+      isCorrect: true,
+      attempt: { select: { finishedAt: true } },
+    },
+    orderBy: { attempt: { finishedAt: 'desc' } },
+  });
+  const latestByQ = new Map<string, boolean>();
+  for (const a of answers) {
+    if (!latestByQ.has(a.questionId)) latestByQ.set(a.questionId, a.isCorrect);
+  }
+  let count = 0;
+  for (const ok of latestByQ.values()) if (!ok) count += 1;
+  return count;
 }

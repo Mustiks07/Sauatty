@@ -16,8 +16,11 @@ export const runtime = 'nodejs';
 export default async function Dashboard() {
   const u = await requireRegularUserPage();
 
-  // Auto-finalize any expired-but-unfinished attempts (e.g. user closed tab).
-  await finalizeStaleAttemptsForUser(u.db.id);
+  // Fire-and-forget — don't block render. If user has many stale attempts
+  // (edge case), they'll finalize in background and appear on next refresh.
+  finalizeStaleAttemptsForUser(u.db.id).catch((err) => {
+    console.error('[dashboard] finalize stale attempts failed:', err);
+  });
 
   const [tests, attempts] = await Promise.all([
     getPublishedTestsCached(),

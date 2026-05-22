@@ -19,14 +19,25 @@ export const adminTestSchema = z.object({
   hasDraftCanvas: z.boolean().optional(),
 });
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+
+// Only allow image URLs from our own Supabase Storage bucket.
+const supabaseImageUrl = z
+  .string()
+  .url()
+  .refine(
+    (url) => !SUPABASE_URL || url.startsWith(SUPABASE_URL),
+    { message: 'Тек Supabase storage URL рұқсат етілген' },
+  );
+
 export const adminQuestionSchema = z.object({
   testId: z.string().min(1),
   topicId: z.string().nullable().optional(),
   order: z.number().int().min(1),
   textKz: z.string().min(1),
-  imageUrl: z.string().url().nullable().optional(),
+  imageUrl: supabaseImageUrl.nullable().optional(),
   explanationKz: z.string().nullable().optional(),
-  explanationImageUrl: z.string().url().nullable().optional(),
+  explanationImageUrl: supabaseImageUrl.nullable().optional(),
   options: z
     .array(
       z.object({

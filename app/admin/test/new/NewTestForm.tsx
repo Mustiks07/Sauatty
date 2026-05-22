@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea, Label, FieldError } from '@/components/ui/Input';
 import { adminTestSchema } from '@/lib/validators/test';
+import { SUBJECT_SLUGS } from '@/lib/constants';
 import { apiFetch } from '@/lib/api-fetch';
 
 type Values = z.infer<typeof adminTestSchema>;
@@ -38,7 +39,7 @@ export function NewTestForm({
 
   const subjectId = watch('subjectId');
   const subject = subjects.find((s) => s.id === subjectId);
-  const isHistory = subject?.slug === 'qazaqstan-tarihy';
+  const isHistory = subject?.slug === SUBJECT_SLUGS.qazaqstanTarihy;
   const hasCalculator = watch('hasCalculator');
   const hasDraftCanvas = watch('hasDraftCanvas');
 
@@ -66,7 +67,7 @@ export function NewTestForm({
             {...register('subjectId', {
               onChange: (e) => {
                 const sub = subjects.find((s) => s.id === e.target.value);
-                if (sub?.slug === 'qazaqstan-tarihy') {
+                if (sub?.slug === SUBJECT_SLUGS.qazaqstanTarihy) {
                   setValue('hasCalculator', false);
                   setValue('hasDraftCanvas', false);
                   setValue('timeLimitMinutes', 40);

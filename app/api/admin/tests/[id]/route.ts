@@ -34,8 +34,8 @@ export async function PATCH(
         },
       });
       if (!test) throw new ApiError('NOT_FOUND', 'Тест жоқ', 404);
-      const minQuestions =
-        test.subject.slug === 'qazaqstan-tarihy' ? 20 : 10;
+      const { getMinQuestionsForSubject } = await import('@/lib/constants');
+      const minQuestions = getMinQuestionsForSubject(test.subject.slug);
       if (test.questions.length < minQuestions) {
         throw new ApiError(
           'VALIDATION_ERROR',

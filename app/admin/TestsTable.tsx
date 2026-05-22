@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Pill } from '@/components/ui/Pill';
 import { cn } from '@/lib/utils';
 
 export type AdminTest = {
@@ -146,26 +147,3 @@ export function TestsTable({ tests }: { tests: AdminTest[] }) {
   );
 }
 
-function Pill({
-  active,
-  onClick,
-  children,
-}: {
-  active?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'px-3.5 py-1.5 rounded-full text-[13px] font-semibold transition-colors border',
-        active
-          ? 'bg-white text-fg border-border shadow-card'
-          : 'bg-transparent text-fg-muted border-transparent hover:text-fg',
-      )}
-    >
-      {children}
-    </button>
-  );
-}

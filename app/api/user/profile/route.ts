@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { requireUser } from '@/lib/auth';
 import { ok, handleError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
@@ -26,7 +27,7 @@ export async function PATCH(req: NextRequest) {
     const u = await requireUser();
     const body = profileSchema.parse(await req.json());
 
-    const data: any = {};
+    const data: Prisma.UserUpdateInput = {};
     if (body.name !== undefined) data.name = body.name;
     if (body.avatarPreset !== undefined) data.avatarPreset = body.avatarPreset;
     if (body.examDate !== undefined) {

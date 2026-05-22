@@ -39,6 +39,7 @@ export function DraftCanvas({
   const [stroke, setStroke] = useState(STROKES[1]);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastLoaded = useRef<string | null>(null);
+  const mountedRef = useRef(true);
 
   // Load saved paths when question changes.
   useEffect(() => {
@@ -61,6 +62,7 @@ export function DraftCanvas({
   // Clean up pending debounce on unmount — avoids late save after navigation.
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (debounce.current) {
         clearTimeout(debounce.current);
         debounce.current = null;
@@ -71,9 +73,10 @@ export function DraftCanvas({
   function scheduleSave() {
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(async () => {
-      if (!ref.current) return;
+      if (!mountedRef.current || !ref.current) return;
       try {
         const paths = await ref.current.exportPaths();
+        if (!mountedRef.current) return;
         await apiFetch(`/api/attempt/${attemptId}/draft`, {
           method: 'POST',
           body: JSON.stringify({ questionId, canvasData: JSON.stringify(paths) }),
