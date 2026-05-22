@@ -52,6 +52,60 @@ export const metadata: Metadata = {
     description: 'Қазақ тіліндегі ҰБТ-ға дайындалу платформасы.',
     images: ['https://www.sauatty.kz/opengraph-image'],
   },
+  alternates: {
+    canonical: 'https://www.sauatty.kz',
+  },
+  keywords: [
+    'ҰБТ',
+    'ҰБТ-ға дайындық',
+    'математикалық сауаттылық',
+    'Қазақстан тарихы',
+    'тест',
+    'онлайн дайындық',
+    'қазақша',
+    'sauatty',
+    'тегін тест',
+    '11 сынып',
+  ],
+  authors: [{ name: 'Sauatty' }],
+  creator: 'Sauatty',
+  publisher: 'Sauatty',
+  formatDetection: {
+    telephone: false,
+    address: false,
+    email: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    // Заполни эти ID после регистрации в Search Console / Webmaster
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
+  },
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'EducationalOrganization',
+  name: 'Sauatty',
+  alternateName: 'Sauatty — ҰБТ-ға дайындық',
+  url: 'https://www.sauatty.kz',
+  logo: 'https://www.sauatty.kz/icon',
+  description: 'Қазақ тіліндегі ҰБТ-ға дайындалу платформасы.',
+  inLanguage: 'kk',
+  areaServed: {
+    '@type': 'Country',
+    name: 'Қазақстан',
+  },
+  sameAs: [],
 };
 
 export default async function RootLayout({
@@ -65,6 +119,10 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
         <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body>
         <NextIntlClientProvider messages={messages} locale="kk">
