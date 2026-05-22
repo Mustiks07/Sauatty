@@ -321,6 +321,34 @@ NEXT_PUBLIC_SENTRY_DSN=
 - **Реферальная программа** (когда будет монетизация).
 - **Mobile native** через Expo + общий Supabase backend.
 
+### Незавершённые задачи (не пушу пока без явного «давай»)
+
+Эти пункты были предложены в код-ревью (#9, #11 частично, #21, тесты) — я оставил без реализации, потому что они либо требуют платных сервисов, либо большой работы. Возьми если/когда юзер скажет.
+
+- **Rate limiting на критичные endpoints**. `.env.example` уже содержит `UPSTASH_REDIS_REST_URL` и `UPSTASH_REDIS_REST_TOKEN`, но код их не использует. Нужны лимиты на:
+  - `POST /api/attempt/[attemptId]/answer` — спам ответов от одного юзера
+  - `POST /api/attempt/[attemptId]/draft` — спам сохранений черновика (1MB каждое)
+  - `POST /api/admin/upload` — упрётся в Supabase storage quota
+  - `POST /api/manage/verify` — защита от брутфорса админ-логина
+  - `POST /api/user/password` — защита от смены пароля при угоне сессии
+  
+  Подход: создать `lib/rate-limit.ts` с Upstash Redis client (`@upstash/ratelimit` + `@upstash/redis`). Каждый endpoint в начале вызывает `await checkRateLimit(req, 'answer', { limit: 30, window: '1m' })`. Возвращает 429 при превышении. У юзера должен быть бесплатный Upstash аккаунт (10k commands/day).
+
+- **Pagination в `/admin/users`**. Сейчас `take: 500` хардкодом. При росте до 500+ юзеров вернёт всех и отрендерит в DOM. Нужно:
+  - Server-side cursor pagination через `searchParams` (`?page=N`)
+  - Или infinite scroll
+  - Текущий поиск/сортировка на клиенте — это в TestsTable/UsersTable, тоже потребует server-side когда сортируется по всему dataset
+  
+  Не критично пока юзеров <200.
+
+- **Pill компонент в `Breakdown.tsx` (result page) и `UsersTable.tsx` (admin users)**. Там Pill называется `Tab`/`SortPill` и имеет доп. логику `disabled`. Текущий shared `Pill` уже умеет `disabled`, можно мигрировать. Я оставил локально потому что не хотел трогать рабочий код без острой нужды.
+
+- **Тесты**. Полностью отсутствуют. Минимум что стоит добавить когда будет время:
+  - **Vitest** для unit-тестов: `lib/streak.ts`, `lib/utils.ts (formatPhoneDisplay, phoneToE164)`, `lib/attempt.ts (isExpired, finalizeAttempt)`
+  - **Playwright** для E2E: критичный happy-path (регистрация → пройти тест → result), флоу админа (создать тест → опубликовать → пройти → увидеть в analytics)
+  - В CI на GitHub Actions: `npm run lint && npx tsc --noEmit && npx vitest run && npx playwright test`
+  - День-два работы. Не критично пока ты сам тестируешь руками.
+
 ### Поломки которые НЕ надо чинить (это feature, не bug)
 - Пользователь может пройти тест 100 раз и оставить лучший результат — это поощряет повторение, ОК.
 - Bell-иконка в шапке отсутствует — мы убрали потому что не было системы уведомлений.
