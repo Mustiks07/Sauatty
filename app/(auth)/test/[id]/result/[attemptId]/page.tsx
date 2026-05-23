@@ -33,6 +33,7 @@ export default async function ResultPage({
     },
   });
   if (!attempt || attempt.userId !== u.db.id) notFound();
+  if (attempt.testId !== params.id) notFound();
   if (!attempt.finishedAt) notFound();
 
   const score = attempt.score ?? 0;

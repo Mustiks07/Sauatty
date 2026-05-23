@@ -8,6 +8,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function ManagePage() {
   const u = await getSessionUser();

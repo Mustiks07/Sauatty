@@ -22,18 +22,24 @@ export function isExpired(startedAt: Date, timeLimitMinutes: number, now = Date.
 /**
  * Sweep: find all unfinished attempts for a user that are past the time limit
  * and finalize them. Cheap fallback in lieu of a cron — runs on dashboard load.
+ * Uses bounded concurrency so a user with many stale attempts doesn't slam DB.
  */
 export async function finalizeStaleAttemptsForUser(userId: string): Promise<number> {
   const unfinished = await prisma.testAttempt.findMany({
     where: { userId, finishedAt: null },
     include: { test: { select: { timeLimitMinutes: true } } },
   });
+  const expired = unfinished.filter((a) =>
+    isExpired(a.startedAt, a.test.timeLimitMinutes),
+  );
+  const BATCH = 5;
   let finalized = 0;
-  for (const a of unfinished) {
-    if (isExpired(a.startedAt, a.test.timeLimitMinutes)) {
-      await finalizeAttempt(a.id);
-      finalized += 1;
-    }
+  for (let i = 0; i < expired.length; i += BATCH) {
+    const batch = expired.slice(i, i + BATCH);
+    const results = await Promise.allSettled(
+      batch.map((a) => finalizeAttempt(a.id)),
+    );
+    finalized += results.filter((r) => r.status === 'fulfilled').length;
   }
   return finalized;
 }
@@ -83,24 +89,31 @@ export async function finalizeAttempt(attemptId: string): Promise<{
     }
   }
 
-  await Promise.all([
-    correctIds.length
-      ? prisma.userAnswer.updateMany({
-          where: { id: { in: correctIds } },
-          data: { isCorrect: true },
-        })
-      : Promise.resolve(),
-    wrongIds.length
-      ? prisma.userAnswer.updateMany({
-          where: { id: { in: wrongIds } },
-          data: { isCorrect: false },
-        })
-      : Promise.resolve(),
+  // Batch transaction: all three writes commit atomically in one SQL transaction.
+  // Safe under PgBouncer transaction mode (not interactive).
+  const ops = [
     prisma.testAttempt.update({
       where: { id: attempt.id },
       data: { score, finishedAt: new Date() },
     }),
-  ]);
+  ];
+  if (correctIds.length) {
+    ops.unshift(
+      prisma.userAnswer.updateMany({
+        where: { id: { in: correctIds } },
+        data: { isCorrect: true },
+      }) as any,
+    );
+  }
+  if (wrongIds.length) {
+    ops.unshift(
+      prisma.userAnswer.updateMany({
+        where: { id: { in: wrongIds } },
+        data: { isCorrect: false },
+      }) as any,
+    );
+  }
+  await prisma.$transaction(ops);
 
   return {
     attemptId: attempt.id,

@@ -1,9 +1,12 @@
+import type { NextRequest } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { ok, fail } from '@/lib/api-error';
+import { isAllowedOrigin } from '@/lib/origin';
 
 export const runtime = 'nodejs';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  if (!isAllowedOrigin(req)) return fail('FORBIDDEN', 'Invalid origin', 403);
   const u = await getSessionUser();
   if (!u) {
     // In production this leaks nothing (same generic 403),

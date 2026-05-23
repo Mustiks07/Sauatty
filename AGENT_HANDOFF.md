@@ -234,8 +234,8 @@ DATABASE_URL=postgresql://...pooler...:6543/postgres?pgbouncer=true&connection_l
 DIRECT_URL=postgresql://...pooler...:5432/postgres
 
 # Seed
-SEED_ADMIN_PHONE=+77472039880
-SEED_ADMIN_PASSWORD=Mustafa0607!a
+SEED_ADMIN_PHONE=<см .env.local — не коммитить сюда>
+SEED_ADMIN_PASSWORD=<см .env.local — не коммитить сюда>
 
 # SEO verification
 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=<...>
@@ -255,7 +255,7 @@ NEXT_PUBLIC_SENTRY_DSN=
 
 2. **Hydration mismatch в Timer** — `useState(() => timeLimitMinutes * 60)` на первом рендере (детерминированно), реальное `remaining` считается в useEffect после mount.
 
-3. **react-sketch-canvas + next/dynamic** — НЕ оборачивать через `next/dynamic`, потому что ref не пробрасывается → все кнопки тулбара (eraser, undo, clear) молча не работают. Прямой `import { ReactSketchCanvas }` работает потому что компонент в `'use client'` файле.
+3. **react-sketch-canvas + next/dynamic** — `ReactSketchCanvas` сам по себе НЕ оборачивать в `next/dynamic`, потому что мы держим к нему ref внутри `DraftCanvas` и dynamic не пробрасывает forwardRef. Внутри `components/test/DraftCanvas.tsx` идёт прямой `import { ReactSketchCanvas }`. **Но сам `DraftCanvas` (наш wrapper)** оборачивать в `next/dynamic` МОЖНО — ref остаётся внутри wrapper'а, наружу не торчит. Так и сделано в `TestRunner.tsx` для lazy-load.
 
 4. **Cache `.next` на Windows** часто корраптится с ошибками вида `Cannot find module './vendor-chunks/...'`. Лечение: `rd /s /q .next` + перезапустить `npm run dev`.
 
@@ -386,7 +386,7 @@ npm run gen:og      # пересоздаёт public/og.png
 - **Supabase Free Tier** (60 connections, 500 MB database, 1 GB storage, 50k MAU)
 - **Vercel Hobby** (бесплатно, лимит 100 GB-hrs на функции)
 - **Домен sauatty.kz** куплен
-- **Сидовый админ**: phone `+77472039880`, password `Mustafa0607!a`
+- **Сидовый админ**: креды в `.env.local` (`SEED_ADMIN_PHONE`, `SEED_ADMIN_PASSWORD`) — не дублировать в этот файл
 
 Бюджет на платные сервисы: ноль или минимум. Поэтому пока:
 - SMS-провайдера нет (фича password reset отключена)

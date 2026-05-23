@@ -6,6 +6,7 @@ import { getSessionUser } from '@/lib/auth';
 
 export const metadata = { title: 'Профильді толтыр' };
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function OnboardingPage() {
   const u = await getSessionUser();

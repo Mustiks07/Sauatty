@@ -19,33 +19,14 @@ import { Button } from '@/components/ui/Button';
 import { UserAvatar } from '@/components/shared/UserAvatar';
 import { UbtCountdown } from '@/components/shared/UbtCountdown';
 import { ProgressLine, Heatmap } from '@/components/admin/StatsCharts';
-import { formatMSS, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { yyyymmdd, addDays, fillDays } from '@/lib/date-utils';
 import { LogoutButton } from './LogoutButton';
 import { AttemptsList, type AttemptRow } from './AttemptsList';
 
 export const metadata = { title: 'Профиль' };
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-function yyyymmdd(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Almaty' });
-}
-
-function addDays(d: Date, n: number): Date {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
-function fillDaysSimple(rows: { day: string; value: number }[], from: Date, to: Date) {
-  const map = new Map(rows.map((r) => [r.day, r.value]));
-  const out: { day: string; value: number }[] = [];
-  for (let d = new Date(from); d <= to; d = addDays(d, 1)) {
-    const key = yyyymmdd(d);
-    out.push({ day: key, value: map.get(key) ?? 0 });
-  }
-  return out;
-}
 
 export default async function ProfilePage() {
   const u = await requireRegularUserPage();
@@ -125,7 +106,7 @@ export default async function ProfilePage() {
     const k = yyyymmdd(a.finishedAt);
     heatmapCount.set(k, (heatmapCount.get(k) ?? 0) + 1);
   }
-  const heatmap = fillDaysSimple(
+  const heatmap = fillDays(
     Array.from(heatmapCount.entries()).map(([day, value]) => ({ day, value })),
     day90,
     new Date(),

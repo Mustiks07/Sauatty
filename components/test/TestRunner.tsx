@@ -78,7 +78,10 @@ export function TestRunner(p: StartPayload) {
   const [answers, setAnswers] = useState<Record<string, string | null>>(
     p.initialAnswers ?? {},
   );
-  const [drafts] = useState<Record<string, string>>(p.initialDrafts ?? {});
+  const [drafts, setDrafts] = useState<Record<string, string>>(p.initialDrafts ?? {});
+  const onDraftSaved = useCallback((qid: string, canvasData: string) => {
+    setDrafts((d) => ({ ...d, [qid]: canvasData }));
+  }, []);
   const hasAnyTool = p.test.hasCalculator || p.test.hasDraftCanvas;
   const initialTool: 'calc' | 'sketch' = p.test.hasCalculator ? 'calc' : 'sketch';
   const [desktopTool, setDesktopTool] = useState<'calc' | 'sketch'>(initialTool);
@@ -395,6 +398,7 @@ export function TestRunner(p: StartPayload) {
                 initialData={drafts[q.id] ?? null}
                 fullscreen={sketchFullscreen}
                 onToggleFullscreen={() => setSketchFullscreen((v) => !v)}
+                onSaved={onDraftSaved}
               />
             ) : null}
 
@@ -482,6 +486,7 @@ export function TestRunner(p: StartPayload) {
           initialData={drafts[q.id] ?? null}
           fullscreen={sketchFullscreen}
           onToggleFullscreen={() => setSketchFullscreen((v) => !v)}
+          onSaved={onDraftSaved}
         />
       </ToolDialog>
 

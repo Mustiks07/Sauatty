@@ -26,12 +26,16 @@ export function DraftCanvas({
   initialData,
   fullscreen = false,
   onToggleFullscreen,
+  onSaved,
 }: {
   attemptId: string;
   questionId: string;
   initialData?: string | null;
   fullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  /** Called with serialized canvas paths after each debounced save, so parent
+   *  can persist the latest state across unmount/remount (e.g. mobile dialog). */
+  onSaved?: (questionId: string, canvasData: string) => void;
 }) {
   const ref = useRef<ReactSketchCanvasRef>(null);
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
@@ -77,9 +81,13 @@ export function DraftCanvas({
       try {
         const paths = await ref.current.exportPaths();
         if (!mountedRef.current) return;
+        const canvasData = JSON.stringify(paths);
+        // Notify parent FIRST so the live state stays fresh even if the API
+        // call is slow or fails — this preserves draft across remounts.
+        onSaved?.(questionId, canvasData);
         await apiFetch(`/api/attempt/${attemptId}/draft`, {
           method: 'POST',
-          body: JSON.stringify({ questionId, canvasData: JSON.stringify(paths) }),
+          body: JSON.stringify({ questionId, canvasData }),
         });
       } catch {
         /* toast handled in apiFetch */

@@ -1,8 +1,5 @@
 // Shared streak calculation — used by dashboard and profile.
-
-function yyyymmdd(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Almaty' });
-}
+import { yyyymmdd } from '@/lib/date-utils';
 
 export function calcStreak(finishedDates: Date[]): number {
   if (finishedDates.length === 0) return 0;

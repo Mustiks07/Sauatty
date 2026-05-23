@@ -19,7 +19,17 @@ const profileSchema = z.object({
       'graphite',
     ])
     .optional(),
-  examDate: z.string().nullable().optional(),
+  examDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Күн форматы: YYYY-MM-DD')
+    .refine((s) => {
+      const d = new Date(s + 'T00:00:00Z');
+      if (Number.isNaN(d.getTime())) return false;
+      const year = d.getUTCFullYear();
+      return year >= 2024 && year <= 2030;
+    }, 'Күн дұрыс емес')
+    .nullable()
+    .optional(),
 });
 
 export async function PATCH(req: NextRequest) {

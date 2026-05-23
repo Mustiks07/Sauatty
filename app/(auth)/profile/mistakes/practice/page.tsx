@@ -16,14 +16,19 @@ export default async function PracticePage() {
 
   // Shuffle, take up to 10
   const shuffled = [...mistakes].sort(() => Math.random() - 0.5).slice(0, 10);
-  const questions: PracticeQuestion[] = shuffled.map((m) => ({
-    questionId: m.questionId,
-    textKz: m.textKz,
-    imageUrl: m.imageUrl,
-    explanationKz: m.explanationKz,
-    subjectName: m.subject.nameKz,
-    options: m.options,
-  }));
+  const questions: PracticeQuestion[] = shuffled.map((m) => {
+    const correct = m.options.find((o) => o.isCorrect);
+    return {
+      questionId: m.questionId,
+      textKz: m.textKz,
+      imageUrl: m.imageUrl,
+      explanationKz: m.explanationKz,
+      subjectName: m.subject.nameKz,
+      // Strip isCorrect from options sent to client.
+      options: m.options.map(({ id, textKz, order }) => ({ id, textKz, order })),
+      correctOptionId: correct?.id ?? null,
+    };
+  });
 
   return (
     <div className="bg-bg-alt min-h-screen">

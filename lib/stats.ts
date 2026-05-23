@@ -1,32 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { calcStreak } from '@/lib/streak';
+import { yyyymmdd, addDays, fillDays, type DayBucket } from '@/lib/date-utils';
 
-export type DayBucket = { day: string; value: number };
-
-function yyyymmdd(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Almaty' });
-}
-
-function addDays(d: Date, n: number): Date {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
-/** Fills missing days with 0 between [from..to] inclusive. */
-export function fillDays(
-  rows: { day: string; value: number }[],
-  from: Date,
-  to: Date,
-): DayBucket[] {
-  const map = new Map(rows.map((r) => [r.day, r.value]));
-  const out: DayBucket[] = [];
-  for (let d = new Date(from); d <= to; d = addDays(d, 1)) {
-    const key = yyyymmdd(d);
-    out.push({ day: key, value: map.get(key) ?? 0 });
-  }
-  return out;
-}
+export type { DayBucket };
+export { fillDays };
 
 export async function getSiteStats() {
   const now = new Date();

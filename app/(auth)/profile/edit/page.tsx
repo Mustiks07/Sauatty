@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { requireRegularUserPage } from '@/lib/auth';
+import type { AvatarPreset } from '@/lib/avatar';
 import { EditForm } from './EditForm';
 
 export const metadata = { title: 'Профильді өңдеу' };
@@ -24,7 +25,7 @@ export default async function ProfileEditPage() {
         <EditForm
           initial={{
             name: u.db.name,
-            avatarPreset: (u.db.avatarPreset ?? 'blue-amber') as any,
+            avatarPreset: (u.db.avatarPreset ?? 'blue-amber') as AvatarPreset,
             examDate: u.db.examDate ? u.db.examDate.toISOString().slice(0, 10) : '',
             phone: u.db.phone,
             email: u.db.email,

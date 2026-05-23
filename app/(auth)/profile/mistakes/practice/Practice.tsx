@@ -15,7 +15,8 @@ export type PracticeQuestion = {
   imageUrl: string | null;
   explanationKz: string | null;
   subjectName: string;
-  options: { id: string; textKz: string; isCorrect: boolean; order: number }[];
+  options: { id: string; textKz: string; order: number }[];
+  correctOptionId: string | null;
 };
 
 export function Practice({ questions }: { questions: PracticeQuestion[] }) {
@@ -75,7 +76,7 @@ export function Practice({ questions }: { questions: PracticeQuestion[] }) {
   }
 
   const q = questions[idx];
-  const correctId = q.options.find((o) => o.isCorrect)?.id ?? null;
+  const correctId = q.correctOptionId;
 
   function pickAnswer(optId: string) {
     if (revealed) return;

@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth';
-import { ok, handleError, ApiError } from '@/lib/api-error';
+import { ok, fail, handleError, ApiError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { isAllowedOrigin } from '@/lib/origin';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +14,7 @@ const bodySchema = z.object({
 
 export async function DELETE(req: NextRequest) {
   try {
+    if (!isAllowedOrigin(req)) return fail('FORBIDDEN', 'Invalid origin', 403);
     const u = await requireUser();
     // Body must contain literal "Жою" to confirm.
     const body = bodySchema.parse(await req.json().catch(() => ({})));

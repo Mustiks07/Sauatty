@@ -1,9 +1,10 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth';
-import { ok, handleError, ApiError } from '@/lib/api-error';
+import { ok, fail, handleError, ApiError } from '@/lib/api-error';
 import { createAdminClient } from '@/lib/supabase/server';
 import { passwordSchema } from '@/lib/validators/auth';
+import { isAllowedOrigin } from '@/lib/origin';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +14,7 @@ const bodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isAllowedOrigin(req)) return fail('FORBIDDEN', 'Invalid origin', 403);
     const u = await requireUser();
     const body = bodySchema.parse(await req.json());
 
