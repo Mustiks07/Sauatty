@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Toaster } from 'sonner';
+import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 
 const inter = Inter({
@@ -129,6 +130,7 @@ export default async function RootLayout({
           {children}
           <Toaster position="bottom-right" richColors closeButton />
         </NextIntlClientProvider>
+        <Analytics />
       </body>
     </html>
   );
