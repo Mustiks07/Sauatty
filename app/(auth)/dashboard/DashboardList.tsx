@@ -32,7 +32,9 @@ export type DashboardTest = {
   questionCount: number;
   timeLimitMinutes: number;
   best: number | null;
-  subject: { id: string; slug: string; nameKz: string };
+  subject: { id: string; slug: string; nameKz: string; kind?: 'CORE' | 'PROFILE' };
+  authorName?: string | null;
+  isMine?: boolean;
 };
 
 export function DashboardList({ tests }: { tests: DashboardTest[] }) {
@@ -154,6 +156,8 @@ export function DashboardList({ tests }: { tests: DashboardTest[] }) {
                 count={t.questionCount}
                 time={t.timeLimitMinutes}
                 best={t.best != null ? `${t.best}/${t.questionCount}` : null}
+                authorName={t.authorName ?? null}
+                isMine={!!t.isMine}
               />
             );
           })}
@@ -204,6 +208,8 @@ function TestCard({
   count,
   time,
   best,
+  authorName,
+  isMine,
 }: {
   href: string;
   icon: React.ReactNode;
@@ -213,6 +219,8 @@ function TestCard({
   count: number;
   time: number;
   best: string | null;
+  authorName: string | null;
+  isMine: boolean;
 }) {
   const bg = {
     blue: 'bg-brand-light text-brand',
@@ -229,7 +237,9 @@ function TestCard({
         >
           {icon}
         </div>
-        {best ? (
+        {isMine ? (
+          <Badge tone="gray">Менің тестім</Badge>
+        ) : best ? (
           <Badge tone="green">
             <Trophy size={11} /> Үздік: {best}
           </Badge>
@@ -252,12 +262,23 @@ function TestCard({
             <Clock size={14} /> {time} минут
           </span>
         </div>
+        {authorName && (
+          <div className="text-[12px] text-fg-muted mt-2">
+            Автор: <span className="text-fg font-medium">{authorName}</span>
+          </div>
+        )}
       </div>
-      <Button asChild className="w-full">
-        <Link href={href}>
-          Бастау <ArrowRight size={16} />
-        </Link>
-      </Button>
+      {isMine ? (
+        <Button disabled className="w-full" variant="secondary">
+          Өз тестіңді тапсыруға болмайды
+        </Button>
+      ) : (
+        <Button asChild className="w-full">
+          <Link href={href}>
+            Бастау <ArrowRight size={16} />
+          </Link>
+        </Button>
+      )}
     </Card>
   );
 }

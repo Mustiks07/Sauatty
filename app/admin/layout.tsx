@@ -1,4 +1,5 @@
 import { requireAdminPage } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { AdminShell } from '@/components/admin/AdminShell';
 
 export const dynamic = 'force-dynamic';
@@ -10,5 +11,12 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const u = await requireAdminPage();
-  return <AdminShell adminName={u.db.name}>{children}</AdminShell>;
+  const pendingCount = await prisma.test.count({
+    where: { status: 'PENDING_REVIEW' },
+  });
+  return (
+    <AdminShell adminName={u.db.name} pendingCount={pendingCount}>
+      {children}
+    </AdminShell>
+  );
 }

@@ -54,6 +54,8 @@ export default async function Dashboard() {
     timeLimitMinutes: t.timeLimitMinutes,
     best: bestByTest.get(t.id) ?? null,
     subject: t.subject,
+    authorName: t.author?.name ?? null,
+    isMine: t.author?.id === u.db.id,
   }));
 
   return (

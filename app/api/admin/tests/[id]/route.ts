@@ -35,7 +35,10 @@ export async function PATCH(
       });
       if (!test) throw new ApiError('NOT_FOUND', 'Тест жоқ', 404);
       const { getMinQuestionsForSubject } = await import('@/lib/constants');
-      const minQuestions = getMinQuestionsForSubject(test.subject.slug);
+      const minQuestions = getMinQuestionsForSubject(
+        test.subject.slug,
+        test.subject.kind,
+      );
       if (test.questions.length < minQuestions) {
         throw new ApiError(
           'VALIDATION_ERROR',
@@ -61,9 +64,18 @@ export async function PATCH(
       }
     }
 
+    // Sync status when admin toggles isPublished
+    const data: any = { ...body };
+    if (body.isPublished === true) {
+      data.status = 'PUBLISHED';
+      data.reviewedAt = new Date();
+    } else if (body.isPublished === false) {
+      data.status = 'DRAFT';
+    }
+
     const updated = await prisma.test.update({
       where: { id: params.id },
-      data: body,
+      data,
     });
     invalidatePublishedTests();
     return ok({ id: updated.id });

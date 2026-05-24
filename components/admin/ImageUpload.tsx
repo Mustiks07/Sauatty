@@ -9,9 +9,13 @@ import { Button } from '@/components/ui/Button';
 export function ImageUpload({
   value,
   onChange,
+  endpoint = '/api/admin/upload',
+  maxSizeMB = 2,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
+  endpoint?: string;
+  maxSizeMB?: number;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -26,14 +30,14 @@ export function ImageUpload({
     setUploading(true);
     try {
       const compressed = await imageCompression(file, {
-        maxSizeMB: 2,
+        maxSizeMB,
         maxWidthOrHeight: 1600,
         useWebWorker: true,
         initialQuality: 0.8,
       });
       const fd = new FormData();
       fd.append('file', compressed, file.name);
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const res = await fetch(endpoint, { method: 'POST', body: fd });
       const json = await res.json();
       if (!res.ok || json.error) {
         toast.error(json.error ?? 'Жүктеу қатесі');

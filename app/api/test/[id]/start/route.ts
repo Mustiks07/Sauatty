@@ -22,7 +22,10 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         },
       },
     });
-    if (!test || !test.isPublished) throw new ApiError('NOT_FOUND', 'Тест табылмады', 404);
+    if (!test || test.status !== 'PUBLISHED') throw new ApiError('NOT_FOUND', 'Тест табылмады', 404);
+    if (test.authorId && test.authorId === u.db.id) {
+      throw new ApiError('FORBIDDEN', 'Өз тестіңді тапсыруға болмайды', 403);
+    }
 
     // Reuse an unfinished attempt if exists.
     let attempt = await prisma.testAttempt.findFirst({

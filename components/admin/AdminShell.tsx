@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, LineChart, Settings, Users } from 'lucide-react';
+import {
+  BookOpen,
+  Inbox,
+  LineChart,
+  Layers,
+  Settings,
+  Users,
+} from 'lucide-react';
 import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
 
 const ITEMS: {
@@ -11,6 +18,7 @@ const ITEMS: {
   label: string;
   icon: any;
   match: (path: string) => boolean;
+  badgeKey?: 'pending';
 }[] = [
   {
     key: 'tests',
@@ -20,6 +28,21 @@ const ITEMS: {
     match: (p) =>
       p === '/admin' ||
       (p.startsWith('/admin/test') && !p.startsWith('/admin/test-stats')),
+  },
+  {
+    key: 'moderation',
+    href: '/admin/moderation',
+    label: 'Тексеру',
+    icon: Inbox,
+    match: (p) => p.startsWith('/admin/moderation'),
+    badgeKey: 'pending',
+  },
+  {
+    key: 'subjects',
+    href: '/admin/subjects',
+    label: 'Пәндер',
+    icon: Layers,
+    match: (p) => p.startsWith('/admin/subjects'),
   },
   {
     key: 'users',
@@ -46,9 +69,11 @@ const ITEMS: {
 
 export function AdminShell({
   adminName = 'Admin',
+  pendingCount = 0,
   children,
 }: {
   adminName?: string;
+  pendingCount?: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname() || '/admin';
@@ -85,6 +110,7 @@ export function AdminShell({
               </div>
             );
           }
+          const badge = it.badgeKey === 'pending' && pendingCount > 0 ? pendingCount : null;
           return (
             <Link
               key={it.key}
@@ -96,6 +122,11 @@ export function AdminShell({
               }`}
             >
               <Icon size={16} /> {it.label}
+              {badge != null && (
+                <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-accent text-white text-[11px] font-bold">
+                  {badge}
+                </span>
+              )}
             </Link>
           );
         })}

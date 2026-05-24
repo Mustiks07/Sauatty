@@ -1,10 +1,20 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { AlertCircle } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { TestEditor } from './TestEditor';
 
 export const metadata = { title: 'Тестті өңдеу' };
 export const dynamic = 'force-dynamic';
+
+const STATUS_BADGE: Record<string, { label: string; tone: 'gray' | 'amber' | 'green' | 'red' }> = {
+  DRAFT: { label: 'Драфт', tone: 'gray' },
+  PENDING_REVIEW: { label: 'Тексеруде', tone: 'amber' },
+  PUBLISHED: { label: 'Жарияланды', tone: 'green' },
+  REJECTED: { label: 'Қайтарылды', tone: 'red' },
+};
 
 export default async function EditTestPage({
   params,
@@ -14,6 +24,7 @@ export default async function EditTestPage({
   const test = await prisma.test.findUnique({
     where: { id: params.id },
     include: {
+      author: { select: { id: true, name: true } },
       questions: {
         orderBy: { order: 'asc' },
         include: { options: { orderBy: { order: 'asc' } } },
@@ -21,6 +32,7 @@ export default async function EditTestPage({
     },
   });
   if (!test) notFound();
+  const statusMeta = STATUS_BADGE[test.status] ?? STATUS_BADGE.DRAFT;
   return (
     <div className="p-6 md:p-10">
       <div className="text-[13px] text-fg-muted flex items-center gap-1.5 mb-1.5">
@@ -29,6 +41,43 @@ export default async function EditTestPage({
         </Link>{' '}
         / <span className="text-fg font-medium">{test.titleKz}</span>
       </div>
+
+      {(test.author || test.status !== 'DRAFT') && (
+        <Card className="p-3.5 mb-4 flex flex-wrap items-center gap-3 bg-bg-alt">
+          <Badge tone={statusMeta.tone}>{statusMeta.label}</Badge>
+          {test.author && (
+            <div className="text-[13px] text-fg-muted">
+              Автор:{' '}
+              <Link
+                href={`/admin/users/${test.author.id}`}
+                className="text-fg font-medium hover:underline"
+              >
+                {test.author.name}
+              </Link>
+            </div>
+          )}
+          {test.status === 'PENDING_REVIEW' && (
+            <Link
+              href={`/admin/moderation/${test.id}`}
+              className="text-[13px] text-brand font-semibold hover:underline ml-auto"
+            >
+              Модерация бетіне →
+            </Link>
+          )}
+        </Card>
+      )}
+
+      {test.status === 'REJECTED' && test.rejectionReason && (
+        <Card className="p-3.5 mb-4 bg-error-light border-error/30">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-error mt-0.5 flex-shrink-0" />
+            <div className="text-[13px] text-error-ink">
+              <strong>Қайтару себебі:</strong> {test.rejectionReason}
+            </div>
+          </div>
+        </Card>
+      )}
+
       <TestEditor
         test={{
           id: test.id,

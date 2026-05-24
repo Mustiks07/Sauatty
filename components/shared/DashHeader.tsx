@@ -4,7 +4,11 @@ import { SauattyLogo, SauattyMark } from '@/components/shared/Logo';
 import { UserAvatar } from '@/components/shared/UserAvatar';
 import { getSessionUser } from '@/lib/auth';
 
-export async function DashHeader({ active }: { active?: 'tests' | 'progress' | 'history' }) {
+export async function DashHeader({
+  active,
+}: {
+  active?: 'tests' | 'progress' | 'history' | 'my-tests';
+}) {
   const u = await getSessionUser();
   const name = u?.db.name ?? 'Қолданушы';
   return (
@@ -18,6 +22,9 @@ export async function DashHeader({ active }: { active?: 'tests' | 'progress' | '
           <nav className="hidden md:flex gap-1 text-sm">
             <NavItem href="/dashboard" active={active === 'tests'}>
               Тесттер
+            </NavItem>
+            <NavItem href="/my-tests" active={active === 'my-tests'}>
+              Менің тесттерім
             </NavItem>
             <NavItem href="/profile" active={active === 'history'}>
               Тарих

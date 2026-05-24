@@ -24,8 +24,12 @@ export default async function TestPage({ params }: { params: { id: string } }) {
       },
     },
   });
-  if (!test || !test.isPublished) notFound();
+  if (!test || test.status !== 'PUBLISHED') notFound();
   if (test.questions.length === 0) notFound();
+  if (test.authorId && test.authorId === u.db.id) {
+    // Автор не может проходить свой тест — иначе известны ответы.
+    redirect('/my-tests');
+  }
 
   let attempt = await prisma.testAttempt.findFirst({
     where: { userId: u.db.id, testId: test.id, finishedAt: null },

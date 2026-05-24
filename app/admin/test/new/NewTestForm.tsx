@@ -17,7 +17,7 @@ type Values = z.infer<typeof adminTestSchema>;
 export function NewTestForm({
   subjects,
 }: {
-  subjects: { id: string; nameKz: string; slug: string }[];
+  subjects: { id: string; nameKz: string; slug: string; kind: 'CORE' | 'PROFILE' }[];
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -40,6 +40,7 @@ export function NewTestForm({
   const subjectId = watch('subjectId');
   const subject = subjects.find((s) => s.id === subjectId);
   const isHistory = subject?.slug === SUBJECT_SLUGS.qazaqstanTarihy;
+  const isProfile = subject?.kind === 'PROFILE';
   const hasCalculator = watch('hasCalculator');
   const hasDraftCanvas = watch('hasDraftCanvas');
 
@@ -71,6 +72,11 @@ export function NewTestForm({
                   setValue('hasCalculator', false);
                   setValue('hasDraftCanvas', false);
                   setValue('timeLimitMinutes', 40);
+                } else if (sub?.kind === 'PROFILE') {
+                  // Бейіндік пән: 40 сұрақ × 2 минут = 80 минут
+                  setValue('hasCalculator', false);
+                  setValue('hasDraftCanvas', true);
+                  setValue('timeLimitMinutes', 80);
                 } else {
                   setValue('hasCalculator', true);
                   setValue('hasDraftCanvas', true);
@@ -108,7 +114,9 @@ export function NewTestForm({
           <p className="text-[12px] text-fg-muted mt-1">
             {isHistory
               ? '20 сұрақ × 2 минут = 40 минут (ұсынылған)'
-              : '10 сұрақ × 2 минут = 20 минут (ұсынылған)'}
+              : isProfile
+                ? '40 сұрақ × 2 минут = 80 минут (бейіндік пән)'
+                : '10 сұрақ × 2 минут = 20 минут (ұсынылған)'}
           </p>
         </div>
 

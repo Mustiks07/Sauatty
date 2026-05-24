@@ -14,15 +14,16 @@ export const CACHE_TAGS = {
 export const getPublishedTestsCached = unstable_cache(
   async () => {
     return prisma.test.findMany({
-      where: { isPublished: true },
+      where: { status: 'PUBLISHED' },
       include: {
-        subject: { select: { id: true, slug: true, nameKz: true } },
+        subject: { select: { id: true, slug: true, nameKz: true, kind: true } },
+        author: { select: { id: true, name: true } },
         _count: { select: { questions: true } },
       },
       orderBy: [{ subject: { order: 'asc' } }, { createdAt: 'asc' }],
     });
   },
-  ['published-tests-v2'],
+  ['published-tests-v3'],
   { tags: [CACHE_TAGS.publishedTests], revalidate: 300 },
 );
 
@@ -34,4 +35,8 @@ export const getSubjectsCached = unstable_cache(
 
 export function invalidatePublishedTests() {
   revalidateTag(CACHE_TAGS.publishedTests);
+}
+
+export function invalidateSubjects() {
+  revalidateTag(CACHE_TAGS.subjects);
 }

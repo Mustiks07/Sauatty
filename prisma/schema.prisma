@@ -18,7 +18,9 @@ model User {
   examDate     DateTime? @map("exam_date") @db.Date
   avatarPreset String?   @default("blue-amber") @map("avatar_preset")
 
-  attempts TestAttempt[]
+  attempts     TestAttempt[]
+  createdTests Test[]        @relation("AuthoredTests")
+  reviewedTests Test[]       @relation("ReviewedTests")
 
   @@map("users")
 }
@@ -29,15 +31,28 @@ enum Role {
 }
 
 model Subject {
-  id     String  @id @default(cuid())
-  nameKz String  @map("name_kz")
-  slug   String  @unique
-  order  Int     @default(0)
+  id     String      @id @default(cuid())
+  nameKz String      @map("name_kz")
+  slug   String      @unique
+  order  Int         @default(0)
+  kind   SubjectKind @default(CORE)
 
   topics Topic[]
   tests  Test[]
 
   @@map("subjects")
+}
+
+enum SubjectKind {
+  CORE
+  PROFILE
+}
+
+enum TestStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
 }
 
 model Topic {
@@ -52,21 +67,31 @@ model Topic {
 }
 
 model Test {
-  id               String   @id @default(cuid())
-  subjectId        String   @map("subject_id")
-  titleKz          String   @map("title_kz")
-  descriptionKz    String?  @map("description_kz")
-  timeLimitMinutes Int      @map("time_limit_minutes")
-  hasCalculator    Boolean  @default(true) @map("has_calculator")
-  hasDraftCanvas   Boolean  @default(true) @map("has_draft_canvas")
-  isPublished      Boolean  @default(false) @map("is_published")
-  createdAt        DateTime @default(now()) @map("created_at")
+  id               String     @id @default(cuid())
+  subjectId        String     @map("subject_id")
+  titleKz          String     @map("title_kz")
+  descriptionKz    String?    @map("description_kz")
+  timeLimitMinutes Int        @map("time_limit_minutes")
+  hasCalculator    Boolean    @default(true) @map("has_calculator")
+  hasDraftCanvas   Boolean    @default(true) @map("has_draft_canvas")
+  isPublished      Boolean    @default(false) @map("is_published")
+  status           TestStatus @default(DRAFT)
+  authorId         String?    @map("author_id") @db.Uuid
+  submittedAt      DateTime?  @map("submitted_at")
+  reviewedAt       DateTime?  @map("reviewed_at")
+  reviewedById     String?    @map("reviewed_by_id") @db.Uuid
+  rejectionReason  String?    @map("rejection_reason")
+  createdAt        DateTime   @default(now()) @map("created_at")
 
-  subject   Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  questions Question[]
-  attempts  TestAttempt[]
+  subject    Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  author     User?         @relation("AuthoredTests", fields: [authorId], references: [id], onDelete: SetNull)
+  reviewedBy User?         @relation("ReviewedTests", fields: [reviewedById], references: [id], onDelete: SetNull)
+  questions  Question[]
+  attempts   TestAttempt[]
 
   @@index([isPublished, subjectId])
+  @@index([status, subjectId])
+  @@index([authorId, status])
   @@map("tests")
 }
 

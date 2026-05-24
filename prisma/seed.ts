@@ -32,6 +32,28 @@ async function main() {
       order: 2,
     },
   });
+  // PROFILE subjects (бейіндік пәндер) — ҰБТ стандарт
+  const profileSubjects: { slug: string; nameKz: string; order: number }[] = [
+    { slug: 'matematika', nameKz: 'Математика', order: 11 },
+    { slug: 'fizika', nameKz: 'Физика', order: 12 },
+    { slug: 'himiya', nameKz: 'Химия', order: 13 },
+    { slug: 'biologiya', nameKz: 'Биология', order: 14 },
+    { slug: 'geografiya', nameKz: 'География', order: 15 },
+    { slug: 'duniejuzi-tarihy', nameKz: 'Дүниежүзі тарихы', order: 16 },
+    { slug: 'agylshyn-tili', nameKz: 'Ағылшын тілі', order: 17 },
+    { slug: 'informatika', nameKz: 'Информатика', order: 18 },
+    { slug: 'adebiet', nameKz: 'Әдебиет', order: 19 },
+    { slug: 'kuqyq-negizderi', nameKz: 'Құқық негіздері', order: 20 },
+    { slug: 'qazaq-tili', nameKz: 'Қазақ тілі', order: 21 },
+    { slug: 'orys-tili', nameKz: 'Орыс тілі', order: 22 },
+  ];
+  for (const ps of profileSubjects) {
+    await prisma.subject.upsert({
+      where: { slug: ps.slug },
+      update: { kind: 'PROFILE', nameKz: ps.nameKz, order: ps.order },
+      create: { ...ps, kind: 'PROFILE' },
+    });
+  }
 
   // 2) First admin via Supabase Admin API — idempotent.
   if (adminPhone && adminPassword) {

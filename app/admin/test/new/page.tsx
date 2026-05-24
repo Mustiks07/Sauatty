@@ -11,7 +11,12 @@ export default async function NewTestPage() {
         Жаңа тест жасау
       </h1>
       <NewTestForm
-        subjects={subjects.map((s) => ({ id: s.id, nameKz: s.nameKz, slug: s.slug }))}
+        subjects={subjects.map((s) => ({
+          id: s.id,
+          nameKz: s.nameKz,
+          slug: s.slug,
+          kind: s.kind,
+        }))}
       />
     </div>
   );
