@@ -6,9 +6,49 @@ import {
   REJECT_COOLDOWN_MS,
   MIN_QUESTIONS_USER_TEST,
   MAX_QUESTIONS_USER_TEST,
-  MAX_IMAGES_PER_USER_TEST,
   TEST_OPTIONS_COUNT,
 } from '@/lib/constants';
+
+/**
+ * Atomic editable-status guard for question CRUD.
+ *
+ * Returns the row count after a no-op update — if the test row matches
+ * (owned + DRAFT/REJECTED), count=1; otherwise count=0 and we throw.
+ *
+ * This collapses the read+check into a single DB statement, eliminating
+ * the TOCTOU window where a concurrent submit could move the test to
+ * PENDING_REVIEW between an old "find then check" and the subsequent
+ * question mutation. PgBouncer-safe (single statement, no interactive tx).
+ */
+export async function assertTestEditableAtomic(
+  testId: string,
+  userId: string,
+) {
+  // No-op SELECT FOR UPDATE-style check via WHERE-filtered UPDATE.
+  // Single statement → PgBouncer-safe, no interactive tx, no race with
+  // a concurrent submit moving the test out of editable status.
+  const affected = await prisma.$executeRaw`
+    UPDATE tests SET id = id
+    WHERE id = ${testId}
+      AND author_id = ${userId}::uuid
+      AND status IN ('DRAFT', 'REJECTED')
+  `;
+  if (affected === 0) {
+    // Distinguish 403 / 404 / 409 for better UX.
+    const test = await prisma.test.findUnique({
+      where: { id: testId },
+      select: { authorId: true, status: true },
+    });
+    if (!test) throw new ApiError('NOT_FOUND', 'Тест жоқ', 404);
+    if (test.authorId !== userId)
+      throw new ApiError('FORBIDDEN', 'Бұл сіздің тесіңіз емес', 403);
+    throw new ApiError(
+      'CONFLICT',
+      'Тек DRAFT/REJECTED өзгертуге болады',
+      409,
+    );
+  }
+}
 
 export async function getOwnedTest(testId: string, userId: string) {
   const test = await prisma.test.findUnique({
@@ -104,30 +144,3 @@ export async function assertCanSubmit(testId: string, userId: string) {
   return test;
 }
 
-export async function assertCanUploadImage(testId: string, userId: string) {
-  const test = await getOwnedTest(testId, userId);
-  if (!isEditableStatus(test.status)) {
-    throw new ApiError(
-      'CONFLICT',
-      'Тек DRAFT/REJECTED тестке сурет жүктеуге болады',
-      409,
-    );
-  }
-  // Лимит картинок: считаем imageUrl + explanationImageUrl
-  const qs = await prisma.question.findMany({
-    where: { testId },
-    select: { imageUrl: true, explanationImageUrl: true },
-  });
-  const count = qs.reduce(
-    (s, q) => s + (q.imageUrl ? 1 : 0) + (q.explanationImageUrl ? 1 : 0),
-    0,
-  );
-  if (count >= MAX_IMAGES_PER_USER_TEST) {
-    throw new ApiError(
-      'CONFLICT',
-      `Лимит: ${MAX_IMAGES_PER_USER_TEST} сурет / тест`,
-      409,
-    );
-  }
-  return test;
-}

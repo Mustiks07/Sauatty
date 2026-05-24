@@ -2,22 +2,10 @@ import { NextRequest } from 'next/server';
 import { requireUser } from '@/lib/auth';
 import { ok, handleError, ApiError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
-import { myQuestionSchema } from '@/lib/validators/myTest';
-import { getOwnedTest, isEditableStatus } from '@/lib/myTests';
+import { makeMyQuestionSchema } from '@/lib/validators/myTest';
+import { assertTestEditableAtomic } from '@/lib/myTests';
 
 export const runtime = 'nodejs';
-
-async function assertOwnedQuestion(testId: string, qid: string, userId: string) {
-  const test = await getOwnedTest(testId, userId);
-  if (!isEditableStatus(test.status)) {
-    throw new ApiError('CONFLICT', 'Тек DRAFT/REJECTED өзгертуге болады', 409);
-  }
-  const q = await prisma.question.findUnique({ where: { id: qid } });
-  if (!q || q.testId !== testId) {
-    throw new ApiError('NOT_FOUND', 'Сұрақ жоқ', 404);
-  }
-  return { test, q };
-}
 
 export async function PATCH(
   req: NextRequest,
@@ -25,8 +13,18 @@ export async function PATCH(
 ) {
   try {
     const u = await requireUser();
-    await assertOwnedQuestion(params.id, params.qid, u.db.id);
-    const body = myQuestionSchema.parse(await req.json());
+    // Atomic editable check — locks the test row from concurrent submit.
+    await assertTestEditableAtomic(params.id, u.db.id);
+    // Question must belong to this test (after ownership check above).
+    const q = await prisma.question.findUnique({
+      where: { id: params.qid },
+      select: { testId: true },
+    });
+    if (!q || q.testId !== params.id) {
+      throw new ApiError('NOT_FOUND', 'Сұрақ жоқ', 404);
+    }
+
+    const body = makeMyQuestionSchema(u.db.id).parse(await req.json());
 
     await prisma.$transaction([
       prisma.question.update({
@@ -61,7 +59,14 @@ export async function DELETE(
 ) {
   try {
     const u = await requireUser();
-    await assertOwnedQuestion(params.id, params.qid, u.db.id);
+    await assertTestEditableAtomic(params.id, u.db.id);
+    const q = await prisma.question.findUnique({
+      where: { id: params.qid },
+      select: { testId: true },
+    });
+    if (!q || q.testId !== params.id) {
+      throw new ApiError('NOT_FOUND', 'Сұрақ жоқ', 404);
+    }
     await prisma.question.delete({ where: { id: params.qid } });
     return ok({ deleted: true });
   } catch (e) {

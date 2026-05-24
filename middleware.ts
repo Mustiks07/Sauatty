@@ -9,6 +9,7 @@ function isAuthGated(pathname: string) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/test') ||
     pathname.startsWith('/profile') ||
+    pathname.startsWith('/my-tests') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/onboarding')
   );

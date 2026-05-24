@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import { requireUser } from '@/lib/auth';
 import { ok, handleError } from '@/lib/api-error';
 import { prisma } from '@/lib/prisma';
+import { invalidatePublishedTests } from '@/lib/cache';
 
 export const runtime = 'nodejs';
 
@@ -47,6 +48,17 @@ export async function PATCH(req: NextRequest) {
     if (Object.keys(data).length === 0) return ok({ updated: false });
 
     await prisma.user.update({ where: { id: u.db.id }, data });
+
+    // If the user changed their display name AND they authored published
+    // tests, drop the cached dashboard list so other students see the
+    // updated author name immediately rather than waiting for revalidate.
+    if (body.name !== undefined) {
+      const authored = await prisma.test.count({
+        where: { authorId: u.db.id, status: 'PUBLISHED' },
+      });
+      if (authored > 0) invalidatePublishedTests();
+    }
+
     return ok({ updated: true });
   } catch (e) {
     return handleError(e);

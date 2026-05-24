@@ -2,8 +2,11 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireUser } from '@/lib/auth';
 import { ok, fail, handleError, ApiError } from '@/lib/api-error';
-import { assertCanUploadImage } from '@/lib/myTests';
-import { USER_UPLOAD_MAX_BYTES } from '@/lib/constants';
+import { getOwnedTest, isEditableStatus } from '@/lib/myTests';
+import {
+  USER_UPLOAD_MAX_BYTES,
+  MAX_IMAGES_PER_USER_TEST,
+} from '@/lib/constants';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +19,38 @@ export async function POST(
 ) {
   try {
     const u = await requireUser();
-    await assertCanUploadImage(params.id, u.db.id);
+    const test = await getOwnedTest(params.id, u.db.id);
+    if (!isEditableStatus(test.status)) {
+      throw new ApiError(
+        'CONFLICT',
+        'Тек DRAFT/REJECTED тестке сурет жүктеуге болады',
+        409,
+      );
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    // Real storage-based quota: counts every file the user has uploaded for
+    // this test, including orphans not yet attached to a question. Prevents
+    // the previous DoS where a user could upload unlimited files without
+    // saving them to any question (DB-attached count stayed 0).
+    const folder = `user-uploads/${u.db.id}/${params.id}`;
+    const { data: existing, error: listErr } = await supabase.storage
+      .from(BUCKET)
+      .list(folder, { limit: MAX_IMAGES_PER_USER_TEST + 1 });
+    if (listErr) {
+      throw new ApiError('INTERNAL_ERROR', listErr.message, 500);
+    }
+    if ((existing?.length ?? 0) >= MAX_IMAGES_PER_USER_TEST) {
+      throw new ApiError(
+        'CONFLICT',
+        `Лимит: ${MAX_IMAGES_PER_USER_TEST} сурет / тест`,
+        409,
+      );
+    }
 
     const form = await req.formData();
     const file = form.get('file');
@@ -34,16 +68,16 @@ export async function POST(
       );
     }
 
-    const ext = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
-    const path = `user-uploads/${u.db.id}/${params.id}/${Date.now()}-${Math.random()
+    const ext =
+      file.type === 'image/jpeg'
+        ? 'jpg'
+        : file.type === 'image/png'
+          ? 'png'
+          : 'webp';
+    const path = `${folder}/${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
 
     const { error: upErr } = await supabase.storage
       .from(BUCKET)

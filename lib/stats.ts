@@ -305,34 +305,45 @@ export async function getTestAnalytics(testId: string) {
     { label: '80–100%', value: buckets[4] },
   ];
 
-  // Per-question stats: only count answers from FINISHED attempts.
-  const finishedIds = finished.map((a) => a.id);
-  const userAnswers =
-    finishedIds.length > 0
-      ? await prisma.userAnswer.findMany({
-          where: { attemptId: { in: finishedIds } },
-          select: {
-            questionId: true,
-            selectedOptionId: true,
-            isCorrect: true,
-          },
+  // Per-question stats: aggregate via groupBy so we pull at most
+  // (questions × options) rows from Postgres instead of the full
+  // UserAnswer table — was an IN-list bind-param ceiling risk for popular tests.
+  const grouped =
+    finished.length > 0
+      ? await prisma.userAnswer.groupBy({
+          by: ['questionId', 'selectedOptionId'],
+          where: { attempt: { testId, finishedAt: { not: null } } },
+          _count: { _all: true },
         })
       : [];
+
+  // Build the correct-option map up front; we derive isCorrect from grouped rows.
+  const correctOptByQuestion = new Map<string, string>();
+  for (const q of questions) {
+    const correct = q.options.find((o) => o.isCorrect);
+    if (correct) correctOptByQuestion.set(q.id, correct.id);
+  }
 
   const byQ = new Map<
     string,
     { total: number; correct: number; chosen: Map<string | null, number> }
   >();
-  for (const a of userAnswers) {
-    const cur = byQ.get(a.questionId) ?? {
+  for (const g of grouped) {
+    const cur = byQ.get(g.questionId) ?? {
       total: 0,
       correct: 0,
       chosen: new Map(),
     };
-    cur.total += 1;
-    if (a.isCorrect) cur.correct += 1;
-    cur.chosen.set(a.selectedOptionId, (cur.chosen.get(a.selectedOptionId) ?? 0) + 1);
-    byQ.set(a.questionId, cur);
+    const cnt = g._count._all;
+    cur.total += cnt;
+    if (
+      g.selectedOptionId &&
+      correctOptByQuestion.get(g.questionId) === g.selectedOptionId
+    ) {
+      cur.correct += cnt;
+    }
+    cur.chosen.set(g.selectedOptionId, (cur.chosen.get(g.selectedOptionId) ?? 0) + cnt);
+    byQ.set(g.questionId, cur);
   }
 
   const questionStats = questions.map((q) => {
